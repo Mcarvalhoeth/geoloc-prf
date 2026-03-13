@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>GEOLOC PRF</title>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GeoLoc PRF">
+<meta name="theme-color" content="#0a0c10">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>GeoLoc PRF</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Barlow+Condensed:wght@400;600;900&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -15,13 +20,9 @@
     --muted: #4a5568; --ok: #00d68f; --warn: #ffcc00;
   }
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Barlow Condensed', sans-serif; }
-  body { display: flex; flex-direction: column; min-height: 100dvh; }
+  body { display: flex; flex-direction: column; min-height: 100dvh; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
 
-  .header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
-    background: var(--surface);
-  }
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); background: var(--surface); }
   .logo { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 22px; letter-spacing: -1px; color: var(--accent); }
   .logo span { color: var(--accent2); }
   .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
@@ -31,10 +32,7 @@
 
   .main { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; padding: 16px 18px; position: relative; overflow: hidden;
-  }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; position: relative; overflow: hidden; }
   .card::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--accent),transparent); }
   .card.orange::before { background:linear-gradient(90deg,var(--accent2),transparent); }
   .card.green::before { background:linear-gradient(90deg,var(--ok),transparent); }
@@ -47,11 +45,7 @@
 
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
-  .rodovia-card {
-    background: linear-gradient(135deg, #0d1520 0%, #101820 100%);
-    border: 1px solid #1e3040; border-radius: 14px; padding: 20px;
-    position: relative; overflow: hidden;
-  }
+  .rodovia-card { background: linear-gradient(135deg, #0d1520 0%, #101820 100%); border: 1px solid #1e3040; border-radius: 14px; padding: 20px; position: relative; overflow: hidden; }
   .rodovia-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:linear-gradient(90deg,var(--accent2),var(--accent)); }
   .rodovia-name { font-family:'JetBrains Mono',monospace; font-size:32px; font-weight:800; color:var(--accent2); letter-spacing:-1px; }
   .rodovia-km { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--accent); margin-top:4px; }
@@ -61,32 +55,26 @@
   .acc-bar { height:4px; background:var(--border); border-radius:2px; margin-top:8px; overflow:hidden; }
   .acc-fill { height:100%; background:var(--ok); border-radius:2px; transition:width .5s,background .3s; width:0%; }
 
-  .btn-main {
-    width:100%; padding:18px; background:var(--accent); color:#000; border:none;
-    border-radius:12px; font-family:'Barlow Condensed',sans-serif; font-size:20px;
-    font-weight:900; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all .2s;
-    -webkit-tap-highlight-color:transparent;
-  }
+  .btn-main { width:100%; padding:18px; background:var(--accent); color:#000; border:none; border-radius:12px; font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:900; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all .2s; -webkit-tap-highlight-color:transparent; }
   .btn-main:active { transform:scale(.98); opacity:.9; }
   .btn-main.loading { background:var(--warn); animation:loadpulse .8s infinite; }
   .btn-main.stop { background:var(--accent2); }
   @keyframes loadpulse { 0%,100%{opacity:1}50%{opacity:.7} }
 
-  .copy-btn {
-    display:inline-flex; align-items:center; gap:6px; margin-top:10px;
-    padding:8px 14px; background:transparent; border:1px solid var(--border);
-    border-radius:8px; color:var(--muted); font-family:'JetBrains Mono',monospace;
-    font-size:12px; cursor:pointer; transition:all .2s; letter-spacing:1px;
-  }
+  .copy-btn { display:inline-flex; align-items:center; gap:6px; margin-top:10px; padding:8px 14px; background:transparent; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; cursor:pointer; transition:all .2s; letter-spacing:1px; }
   .copy-btn.copied { border-color:var(--ok); color:var(--ok); }
 
-  .error-msg {
-    background:#1a0a0a; border:1px solid #3d1515; border-radius:12px;
-    padding:14px 18px; color:#ff6b6b; font-size:14px; display:none; line-height:1.5;
-  }
+  .error-msg { background:#1a0a0a; border:1px solid #3d1515; border-radius:12px; padding:14px 18px; color:#ff6b6b; font-size:14px; display:none; line-height:1.5; }
   .ts { text-align:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:2px; padding:2px 0 6px; }
   .spinner { display:inline-block; width:12px; height:12px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
   @keyframes spin { to { transform:rotate(360deg) } }
+
+  /* Banner instalar PWA */
+  .install-banner { display:none; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; align-items:center; gap:12px; }
+  .install-banner.show { display:flex; }
+  .install-banner-text { flex:1; font-size:14px; color:var(--text); line-height:1.4; }
+  .install-banner-text small { color:var(--muted); font-size:12px; }
+  .install-btn { padding:8px 14px; background:var(--accent); color:#000; border:none; border-radius:8px; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; letter-spacing:1px; cursor:pointer; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -101,9 +89,19 @@
 
 <div class="main">
 
+  <!-- Banner instalar -->
+  <div class="install-banner" id="install-banner">
+    <div class="install-banner-text">
+      📲 <strong>Instalar como app</strong><br>
+      <small>Adicionar à tela de início</small>
+    </div>
+    <button class="install-btn" onclick="instalarPWA()">INSTALAR</button>
+    <button onclick="fecharBanner()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;">✕</button>
+  </div>
+
   <div class="error-msg" id="err-msg">⚠️ <span id="err-text"></span></div>
 
-  <!-- RODOVIA DESTAQUE -->
+  <!-- RODOVIA -->
   <div class="rodovia-card">
     <div class="card-label">🛣️ Rodovia / Localização</div>
     <div class="rodovia-name" id="rod-name">—</div>
@@ -116,7 +114,6 @@
     </button>
   </div>
 
-  <!-- LAT / LON -->
   <div class="grid2">
     <div class="card">
       <div class="card-label">Latitude</div>
@@ -128,7 +125,6 @@
     </div>
   </div>
 
-  <!-- ALT / VEL -->
   <div class="grid2">
     <div class="card orange">
       <div class="card-label">Altitude</div>
@@ -142,7 +138,6 @@
     </div>
   </div>
 
-  <!-- PRECISÃO -->
   <div class="card green">
     <div class="card-label">Precisão GPS</div>
     <div class="card-value green" id="acc" style="color:var(--muted);font-size:18px">--</div>
@@ -156,14 +151,35 @@
 </div>
 
 <script>
-let watchId = null;
-let tracking = false;
-let lastData = null;
+let watchId = null, tracking = false, lastData = null;
 let lastOverpassCall = 0;
 const OVERPASS_INTERVAL = 8000;
+let deferredPrompt = null;
 
 const $ = id => document.getElementById(id);
 
+// ─── PWA INSTALL ─────────────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $('install-banner').classList.add('show');
+});
+
+function instalarPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; fecharBanner(); });
+  }
+}
+
+function fecharBanner() { $('install-banner').classList.remove('show'); }
+
+// ─── SERVICE WORKER ───────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ─── GPS ──────────────────────────────────────────────────────────
 function toggleTracking() { tracking ? stopTracking() : startTracking(); }
 
 function startTracking() {
@@ -195,25 +211,20 @@ function onSuccess(pos) {
   $('dot').className = 'status-dot active';
   $('status-txt').textContent = 'AO VIVO';
 
-  $('lat').textContent = latitude.toFixed(6);
-  $('lat').style.fontSize = '22px'; $('lat').style.color = 'var(--accent)';
-  $('lon').textContent = longitude.toFixed(6);
-  $('lon').style.fontSize = '22px'; $('lon').style.color = 'var(--accent)';
-  $('alt').textContent = altitude ? Math.round(altitude) : 'N/A';
-  $('alt').style.color = 'var(--accent2)'; $('alt').style.fontSize = '26px';
-  $('spd').textContent = speed ? (speed * 3.6).toFixed(0) : '0';
-  $('spd').style.color = 'var(--accent2)'; $('spd').style.fontSize = '26px';
+  $('lat').textContent = latitude.toFixed(6); $('lat').style.fontSize='22px'; $('lat').style.color='var(--accent)';
+  $('lon').textContent = longitude.toFixed(6); $('lon').style.fontSize='22px'; $('lon').style.color='var(--accent)';
+  $('alt').textContent = altitude ? Math.round(altitude) : 'N/A'; $('alt').style.color='var(--accent2)'; $('alt').style.fontSize='26px';
+  $('spd').textContent = speed ? (speed*3.6).toFixed(0) : '0'; $('spd').style.color='var(--accent2)'; $('spd').style.fontSize='26px';
 
   const accM = Math.round(accuracy);
-  $('acc').textContent = accM + ' m';
+  $('acc').textContent = accM + ' m'; $('acc').style.fontSize='26px';
   $('acc').style.color = accM < 15 ? 'var(--ok)' : accM < 50 ? 'var(--warn)' : '#ff6b6b';
-  $('acc').style.fontSize = '26px';
-  const q = Math.max(0, Math.min(100, 100 - (accM / 50 * 100)));
-  $('acc-fill').style.width = q + '%';
+  const q = Math.max(0, Math.min(100, 100-(accM/50*100)));
+  $('acc-fill').style.width = q+'%';
   $('acc-fill').style.background = accM < 15 ? 'var(--ok)' : accM < 50 ? 'var(--warn)' : '#ff6b6b';
 
   const now = new Date();
-  $('ts').textContent = now.toLocaleTimeString('pt-BR') + ' · ' + now.toLocaleDateString('pt-BR');
+  $('ts').textContent = now.toLocaleTimeString('pt-BR')+' · '+now.toLocaleDateString('pt-BR');
   lastData = { latitude, longitude, altitude, speed, accuracy };
 
   if (Date.now() - lastOverpassCall > OVERPASS_INTERVAL) {
@@ -225,186 +236,114 @@ function onSuccess(pos) {
 function onError(err) {
   const msgs = {1:'Permissão negada. Habilite o GPS nas configurações.',2:'Sinal GPS indisponível.',3:'Tempo esgotado. Tente novamente.'};
   showError(msgs[err.code] || 'Erro desconhecido.');
-  $('btn-main').textContent = 'TENTAR NOVAMENTE';
-  $('btn-main').className = 'btn-main';
-  $('dot').className = 'status-dot';
-  $('status-txt').textContent = 'ERRO';
-  tracking = false;
+  $('btn-main').textContent = 'TENTAR NOVAMENTE'; $('btn-main').className = 'btn-main';
+  $('dot').className = 'status-dot'; $('status-txt').textContent = 'ERRO'; tracking = false;
 }
 
-function showError(msg) { $('err-msg').style.display = 'block'; $('err-text').textContent = msg; }
+function showError(msg) { $('err-msg').style.display='block'; $('err-text').textContent=msg; }
 
-// ─── HAVERSINE ────────────────────────────────────────────────────
-function haversine(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+function haversine(lat1,lon1,lat2,lon2) {
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-// ─── PROJEÇÃO NO SEGMENTO ─────────────────────────────────────────
-function projetarSegmento(px, py, ax, ay, bx, by) {
-  const dx = bx - ax, dy = by - ay;
-  const len2 = dx*dx + dy*dy;
-  if (len2 === 0) return { dist: haversine(px, py, ax, ay), t: 0 };
-  let t = ((px - ax)*dx + (py - ay)*dy) / len2;
-  t = Math.max(0, Math.min(1, t));
-  return { dist: haversine(px, py, ax + t*dx, ay + t*dy), t };
+function projetarSegmento(px,py,ax,ay,bx,by) {
+  const dx=bx-ax, dy=by-ay, len2=dx*dx+dy*dy;
+  if(len2===0) return {dist:haversine(px,py,ax,ay),t:0};
+  let t=((px-ax)*dx+(py-ay)*dy)/len2;
+  t=Math.max(0,Math.min(1,t));
+  return {dist:haversine(px,py,ax+t*dx,ay+t*dy),t};
 }
 
-// ─── CALCULAR KM NA VIA ───────────────────────────────────────────
-function calcularKMnaVia(lat, lon, way) {
+function calcularKMnaVia(lat,lon,way) {
   try {
-    const geom = way.geometry;
-    let menorDist = Infinity, distAcumulada = 0, distNoMenor = 0;
-    for (let i = 0; i < geom.length - 1; i++) {
-      const A = geom[i], B = geom[i+1];
-      const segLen = haversine(A.lat, A.lon, B.lat, B.lon);
-      const proj = projetarSegmento(lat, lon, A.lat, A.lon, B.lat, B.lon);
-      if (proj.dist < menorDist) { menorDist = proj.dist; distNoMenor = distAcumulada + proj.t * segLen; }
-      distAcumulada += segLen;
+    const geom=way.geometry; let menorDist=Infinity,distAc=0,distNo=0;
+    for(let i=0;i<geom.length-1;i++){
+      const A=geom[i],B=geom[i+1],segLen=haversine(A.lat,A.lon,B.lat,B.lon);
+      const proj=projetarSegmento(lat,lon,A.lat,A.lon,B.lat,B.lon);
+      if(proj.dist<menorDist){menorDist=proj.dist;distNo=distAc+proj.t*segLen;}
+      distAc+=segLen;
     }
-    return distNoMenor;
-  } catch(e) { return null; }
+    return distNo;
+  } catch(e){return null;}
 }
 
-// ─── BUSCA PRINCIPAL OVERPASS ─────────────────────────────────────
-async function buscarRodovia(lat, lon) {
-  $('rod-km').innerHTML = '<span class="spinner"></span> buscando rodovia...';
-  $('rod-km').style.color = 'var(--muted)'; $('rod-km').style.fontSize = '14px';
-  $('rod-source').textContent = '';
-
+async function buscarRodovia(lat,lon) {
+  $('rod-km').innerHTML='<span class="spinner"></span> buscando rodovia...';
+  $('rod-km').style.color='var(--muted)'; $('rod-km').style.fontSize='14px';
+  $('rod-source').textContent='';
   try {
-    // 1. Busca ways de rodovia próximas
-    const q1 = `[out:json][timeout:12];(way(around:120,${lat},${lon})[highway][ref];way(around:120,${lat},${lon})[highway~"^(motorway|trunk|primary|secondary)$"];);out body geom;`;
-    const r1 = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body:'data='+encodeURIComponent(q1) });
-    const d1 = await r1.json();
-    const ways = d1.elements || [];
+    const q1=`[out:json][timeout:12];(way(around:120,${lat},${lon})[highway][ref];way(around:120,${lat},${lon})[highway~"^(motorway|trunk|primary|secondary)$"];);out body geom;`;
+    const r1=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q1)});
+    const d1=await r1.json(); const ways=d1.elements||[];
 
-    // 2. Busca marcos de km próximos (raio maior)
-    const q2 = `[out:json][timeout:8];(node(around:600,${lat},${lon})[highway=milestone];node(around:600,${lat},${lon})["distance"];node(around:600,${lat},${lon})["ref:km"];);out body;`;
-    const r2 = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body:'data='+encodeURIComponent(q2) });
-    const d2 = await r2.json();
-    const marcos = d2.elements || [];
+    const q2=`[out:json][timeout:8];(node(around:600,${lat},${lon})[highway=milestone];node(around:600,${lat},${lon})["distance"];node(around:600,${lat},${lon})["ref:km"];);out body;`;
+    const r2=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q2)});
+    const d2=await r2.json(); const marcos=d2.elements||[];
 
-    // — Encontra rodovia com ref —
-    const comRef = ways.filter(w => w.tags && w.tags.ref);
-    const alvo = comRef.length > 0 ? comRef[0] : (ways.length > 0 ? ways[0] : null);
+    const comRef=ways.filter(w=>w.tags&&w.tags.ref);
+    const alvo=comRef.length>0?comRef[0]:(ways.length>0?ways[0]:null);
+    let rodoviaName='—', kmInfo=null, kmSource='';
 
-    let rodoviaName = '—';
-    let kmInfo = null;
-    let kmSource = '';
-
-    if (alvo) {
-      const tags = alvo.tags || {};
-      rodoviaName = tags.ref || tags.name || tags['name:pt'] || formatarHighway(tags.highway) || '—';
-
-      // Tenta marco de KM mais próximo primeiro
-      if (marcos.length > 0) {
-        let melhorMarco = null, menorDist = Infinity;
-        for (const m of marcos) {
-          const d = haversine(lat, lon, m.lat, m.lon);
-          if (d < menorDist) { menorDist = d; melhorMarco = m; }
-        }
-        if (melhorMarco) {
-          const t = melhorMarco.tags || {};
-          const rawKM = t.distance || t['ref:km'] || t.milestone || t['loc_ref'] || t.ref;
-          if (rawKM) {
-            const val = parseFloat(String(rawKM).replace(',', '.'));
-            if (!isNaN(val)) {
-              kmInfo = val.toFixed(1);
-              kmSource = 'MARCO OSM';
-            }
-          }
+    if(alvo){
+      const tags=alvo.tags||{};
+      rodoviaName=tags.ref||tags.name||tags['name:pt']||formatarHighway(tags.highway)||'—';
+      if(marcos.length>0){
+        let melhor=null,menorD=Infinity;
+        for(const m of marcos){const d=haversine(lat,lon,m.lat,m.lon);if(d<menorD){menorD=d;melhor=m;}}
+        if(melhor){
+          const t=melhor.tags||{};
+          const raw=t.distance||t['ref:km']||t.milestone||t['loc_ref']||t.ref;
+          if(raw){const val=parseFloat(String(raw).replace(',','.'));if(!isNaN(val)){kmInfo=val.toFixed(1);kmSource='MARCO OSM';}}
         }
       }
-
-      // Se não achou marco, calcula pela geometria da way
-      if (!kmInfo && alvo.geometry && alvo.geometry.length > 1) {
-        const distNaVia = calcularKMnaVia(lat, lon, alvo);
-        if (distNaVia !== null) {
-          // Tenta usar start_date ou loc_ref da way como referência de KM inicial
-          const tags2 = alvo.tags || {};
-          const refInicio = parseFloat(tags2['loc_ref'] || tags2['ref:km:from'] || '0') || 0;
-          kmInfo = (refInicio + distNaVia).toFixed(1);
-          kmSource = 'CALC GEOM';
-        }
+      if(!kmInfo&&alvo.geometry&&alvo.geometry.length>1){
+        const dist=calcularKMnaVia(lat,lon,alvo);
+        if(dist!==null){const ki=parseFloat((alvo.tags||{})['loc_ref']||(alvo.tags||{})['ref:km:from']||'0')||0;kmInfo=(ki+dist).toFixed(1);kmSource='CALC GEOM';}
       }
     }
 
-    // — Atualiza UI —
-    $('rod-name').textContent = rodoviaName;
-
-    if (kmInfo) {
-      $('rod-km').textContent = 'KM ' + kmInfo;
-      $('rod-km').style.color = 'var(--accent)';
-      $('rod-km').style.fontSize = '26px';
-    } else {
-      $('rod-km').textContent = alvo ? 'KM não mapeado no OSM' : 'Fora de rodovia mapeada';
-      $('rod-km').style.color = 'var(--muted)';
-      $('rod-km').style.fontSize = '13px';
-    }
-
-    $('rod-source').textContent = kmSource ? kmSource + ' · OVERPASS' : 'OVERPASS · OSM';
-
-    if (lastData) { lastData.rodovia = rodoviaName; lastData.km = kmInfo ? 'KM ' + kmInfo : ''; }
-
-    // Município via Nominatim (leve)
-    await preencherMunicipio(lat, lon);
-
-  } catch(e) {
-    console.error(e);
-    await fallbackNominatim(lat, lon);
-  }
+    $('rod-name').textContent=rodoviaName;
+    if(kmInfo){$('rod-km').textContent='KM '+kmInfo;$('rod-km').style.color='var(--accent)';$('rod-km').style.fontSize='26px';}
+    else{$('rod-km').textContent=alvo?'KM não mapeado no OSM':'Fora de rodovia mapeada';$('rod-km').style.color='var(--muted)';$('rod-km').style.fontSize='13px';}
+    $('rod-source').textContent=kmSource?kmSource+' · OVERPASS':'OVERPASS · OSM';
+    if(lastData){lastData.rodovia=rodoviaName;lastData.km=kmInfo?'KM '+kmInfo:'';}
+    await preencherMunicipio(lat,lon);
+  } catch(e){ await fallbackNominatim(lat,lon); }
 }
 
-async function preencherMunicipio(lat, lon) {
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=pt-BR&zoom=10`, { headers:{'User-Agent':'GeoLocPRF/1.0'} });
-    const data = await res.json();
-    const r = data.address || {};
-    const city = r.city || r.town || r.village || r.municipality || '';
-    const state = r.state_code || r.state || '';
-    $('rod-muni').textContent = [city, state].filter(Boolean).join(' · ');
-  } catch(e) {}
+async function preencherMunicipio(lat,lon){
+  try{
+    const res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=pt-BR&zoom=10`,{headers:{'User-Agent':'GeoLocPRF/1.0'}});
+    const data=await res.json(); const r=data.address||{};
+    $('rod-muni').textContent=[r.city||r.town||r.village||r.municipality||'',r.state_code||r.state||''].filter(Boolean).join(' · ');
+  }catch(e){}
 }
 
-async function fallbackNominatim(lat, lon) {
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=pt-BR`, { headers:{'User-Agent':'GeoLocPRF/1.0'} });
-    const data = await res.json();
-    const r = data.address || {};
-    $('rod-name').textContent = r.road || r.highway || 'Via não identificada';
-    $('rod-km').textContent = 'KM indisponível';
-    $('rod-km').style.color = 'var(--muted)'; $('rod-km').style.fontSize = '14px';
-    $('rod-muni').textContent = [r.city||r.town||r.village||'', r.state_code||r.state||''].filter(Boolean).join(' · ');
-    $('rod-source').textContent = 'NOMINATIM · OSM';
-  } catch(e) {
-    $('rod-name').textContent = 'Sem conexão'; $('rod-km').textContent = 'Verifique a internet';
-  }
+async function fallbackNominatim(lat,lon){
+  try{
+    const res=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=pt-BR`,{headers:{'User-Agent':'GeoLocPRF/1.0'}});
+    const data=await res.json(); const r=data.address||{};
+    $('rod-name').textContent=r.road||r.highway||'Via não identificada';
+    $('rod-km').textContent='KM indisponível';$('rod-km').style.color='var(--muted)';$('rod-km').style.fontSize='14px';
+    $('rod-muni').textContent=[r.city||r.town||r.village||r.municipality||'',r.state_code||r.state||''].filter(Boolean).join(' · ');
+    $('rod-source').textContent='NOMINATIM · OSM';
+  }catch(e){$('rod-name').textContent='Sem conexão';$('rod-km').textContent='Verifique a internet';}
 }
 
-function formatarHighway(h) {
-  return {motorway:'Rodovia Federal',trunk:'Via Expressa',primary:'Via Principal',secondary:'Via Secundária'}[h] || h || '—';
-}
+function formatarHighway(h){return {motorway:'Rodovia Federal',trunk:'Via Expressa',primary:'Via Principal',secondary:'Via Secundária'}[h]||h||'—';}
 
-function copyAll() {
-  if (!lastData) return;
-  const lat = parseFloat($('lat').textContent) || 0;
-  const lon = parseFloat($('lon').textContent) || 0;
-  const rod = lastData.rodovia || $('rod-name').textContent;
-  const km = lastData.km || $('rod-km').textContent;
-  const muni = $('rod-muni').textContent;
-  const ts = $('ts').textContent;
-  const txt = `📍 POSIÇÃO GPS\n\nRodovia: ${rod}\n${km}\nMunicípio: ${muni}\n\nLat: ${lat.toFixed(6)}\nLon: ${lon.toFixed(6)}\nHora: ${ts}\n\nMaps: https://maps.google.com/?q=${lat},${lon}`;
-  navigator.clipboard.writeText(txt).then(() => {
-    const btn = $('copy-btn');
-    btn.classList.add('copied'); btn.textContent = '✓ COPIADO';
-    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> COPIAR'; }, 2000);
-  }).catch(() => {
-    const el = document.createElement('textarea'); el.value = txt; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
-  });
+function copyAll(){
+  if(!lastData)return;
+  const lat=parseFloat($('lat').textContent)||0, lon=parseFloat($('lon').textContent)||0;
+  const rod=lastData.rodovia||$('rod-name').textContent, km=lastData.km||$('rod-km').textContent;
+  const muni=$('rod-muni').textContent, ts=$('ts').textContent;
+  const txt=`📍 POSIÇÃO GPS\n\nRodovia: ${rod}\n${km}\nMunicípio: ${muni}\n\nLat: ${lat.toFixed(6)}\nLon: ${lon.toFixed(6)}\nHora: ${ts}\n\nMaps: https://maps.google.com/?q=${lat},${lon}`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn=$('copy-btn'); btn.classList.add('copied'); btn.textContent='✓ COPIADO';
+    setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> COPIAR';},2000);
+  }).catch(()=>{const el=document.createElement('textarea');el.value=txt;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);});
 }
 </script>
 </body>
