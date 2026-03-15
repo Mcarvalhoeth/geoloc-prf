@@ -153,6 +153,7 @@
 <script>
 let watchId = null, tracking = false, lastData = null;
 let lastOverpassCall = 0;
+let overpassPending = false;
 const OVERPASS_INTERVAL = 8000;
 let deferredPrompt = null;
 
@@ -191,7 +192,7 @@ function startTracking() {
   $('status-txt').textContent = 'BUSCANDO';
   $('err-msg').style.display = 'none';
   watchId = navigator.geolocation.watchPosition(onSuccess, onError, {
-    enableHighAccuracy: true, timeout: 15000, maximumAge: 2000
+    enableHighAccuracy: true, timeout: 30000, maximumAge: 2000
   });
 }
 
@@ -211,10 +212,10 @@ function onSuccess(pos) {
   $('dot').className = 'status-dot active';
   $('status-txt').textContent = 'AO VIVO';
 
-  $('lat').textContent = latitude.toFixed(6); $('lat').style.fontSize='22px'; $('lat').style.color='var(--accent)';
-  $('lon').textContent = longitude.toFixed(6); $('lon').style.fontSize='22px'; $('lon').style.color='var(--accent)';
-  $('alt').textContent = altitude ? Math.round(altitude) : 'N/A'; $('alt').style.color='var(--accent2)'; $('alt').style.fontSize='26px';
-  $('spd').textContent = speed ? (speed*3.6).toFixed(0) : '0'; $('spd').style.color='var(--accent2)'; $('spd').style.fontSize='26px';
+  $('lat').textContent = (latitude || 0).toFixed(6); $('lat').style.fontSize='22px'; $('lat').style.color='var(--accent)';
+  $('lon').textContent = (longitude || 0).toFixed(6); $('lon').style.fontSize='22px'; $('lon').style.color='var(--accent)';
+  $('alt').textContent = altitude != null ? Math.round(altitude) : 'N/A'; $('alt').style.color='var(--accent2)'; $('alt').style.fontSize='26px';
+  $('spd').textContent = speed != null ? (speed*3.6).toFixed(0) : '0'; $('spd').style.color='var(--accent2)'; $('spd').style.fontSize='26px';
 
   const accM = Math.round(accuracy);
   $('acc').textContent = accM + ' m'; $('acc').style.fontSize='26px';
@@ -227,7 +228,7 @@ function onSuccess(pos) {
   $('ts').textContent = now.toLocaleTimeString('pt-BR')+' · '+now.toLocaleDateString('pt-BR');
   lastData = { latitude, longitude, altitude, speed, accuracy };
 
-  if (Date.now() - lastOverpassCall > OVERPASS_INTERVAL) {
+  if (Date.now() - lastOverpassCall > OVERPASS_INTERVAL && !overpassPending) {
     lastOverpassCall = Date.now();
     buscarRodovia(latitude, longitude);
   }
@@ -270,16 +271,19 @@ function calcularKMnaVia(lat,lon,way) {
 }
 
 async function buscarRodovia(lat,lon) {
+  overpassPending = true;
   $('rod-km').innerHTML='<span class="spinner"></span> buscando rodovia...';
   $('rod-km').style.color='var(--muted)'; $('rod-km').style.fontSize='14px';
   $('rod-source').textContent='';
   try {
     const q1=`[out:json][timeout:12];(way(around:120,${lat},${lon})[highway][ref];way(around:120,${lat},${lon})[highway~"^(motorway|trunk|primary|secondary)$"];);out body geom;`;
     const r1=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q1)});
+    if(!r1.ok) throw new Error(`HTTP ${r1.status}`);
     const d1=await r1.json(); const ways=d1.elements||[];
 
     const q2=`[out:json][timeout:8];(node(around:600,${lat},${lon})[highway=milestone];node(around:600,${lat},${lon})["distance"];node(around:600,${lat},${lon})["ref:km"];);out body;`;
     const r2=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q2)});
+    if(!r2.ok) throw new Error(`HTTP ${r2.status}`);
     const d2=await r2.json(); const marcos=d2.elements||[];
 
     const comRef=ways.filter(w=>w.tags&&w.tags.ref);
@@ -310,7 +314,7 @@ async function buscarRodovia(lat,lon) {
     $('rod-source').textContent=kmSource?kmSource+' · OVERPASS':'OVERPASS · OSM';
     if(lastData){lastData.rodovia=rodoviaName;lastData.km=kmInfo?'KM '+kmInfo:'';}
     await preencherMunicipio(lat,lon);
-  } catch(e){ await fallbackNominatim(lat,lon); }
+  } catch(e){ await fallbackNominatim(lat,lon); } finally { overpassPending = false; }
 }
 
 async function preencherMunicipio(lat,lon){
@@ -343,7 +347,9 @@ function copyAll(){
   navigator.clipboard.writeText(txt).then(()=>{
     const btn=$('copy-btn'); btn.classList.add('copied'); btn.textContent='✓ COPIADO';
     setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> COPIAR';},2000);
-  }).catch(()=>{const el=document.createElement('textarea');el.value=txt;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);});
+  }).catch(()=>{
+    try{const el=document.createElement('textarea');el.value=txt;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);const btn=$('copy-btn');btn.classList.add('copied');btn.textContent='✓ COPIADO';setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> COPIAR';},2000);}catch(e){showError('Erro ao copiar dados.');}
+  });
 }
 </script>
 </body>
