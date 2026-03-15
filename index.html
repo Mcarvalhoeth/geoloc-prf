@@ -358,20 +358,28 @@ async function buscarRodovia(lat,lon) {
   $('rod-km').innerHTML='<span class="spinner"></span> buscando rodovia...';
   $('rod-km').style.color='var(--muted)'; $('rod-km').style.fontSize='14px';
   $('rod-source').textContent='';
+  console.log('[Rodovia] Iniciando busca em',lat,lon);
   try {
     const q1=`[out:json][timeout:12];(way(around:120,${lat},${lon})[highway][ref];way(around:120,${lat},${lon})[highway~"^(motorway|trunk|primary|secondary)$"];);out body geom;`;
+    console.log('[Rodovia] Fazendo request 1 (ways)...');
     const r1=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q1)});
+    console.log('[Rodovia] Request 1 status:', r1.status);
     if(!r1.ok) throw new Error(`HTTP ${r1.status}`);
     const d1=await r1.json(); const ways=d1.elements||[];
+    console.log('[Rodovia] Ways encontradas:', ways.length);
 
     const q2=`[out:json][timeout:8];(node(around:600,${lat},${lon})[highway=milestone];node(around:600,${lat},${lon})["distance"];node(around:600,${lat},${lon})["ref:km"];);out body;`;
+    console.log('[Rodovia] Fazendo request 2 (marcos)...');
     const r2=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q2)});
+    console.log('[Rodovia] Request 2 status:', r2.status);
     if(!r2.ok) throw new Error(`HTTP ${r2.status}`);
     const d2=await r2.json(); const marcos=d2.elements||[];
+    console.log('[Rodovia] Marcos encontrados:', marcos.length);
 
     const comRef=ways.filter(w=>w.tags&&w.tags.ref);
     const alvo=comRef.length>0?comRef[0]:(ways.length>0?ways[0]:null);
     let rodoviaName='—', kmInfo=null, kmSource='';
+    console.log('[Rodovia] Alvo selecionado:', alvo?.tags?.ref || alvo?.tags?.name || 'nenhum');
 
     if(alvo){
       const tags=alvo.tags||{};
@@ -382,22 +390,28 @@ async function buscarRodovia(lat,lon) {
         if(melhor){
           const t=melhor.tags||{};
           const raw=t.distance||t['ref:km']||t.milestone||t['loc_ref']||t.ref;
+          console.log('[Rodovia] Marco mais próximo:', raw);
           if(raw){const val=parseFloat(String(raw).replace(',','.'));if(!isNaN(val)){kmInfo=val.toFixed(1);kmSource='MARCO OSM';}}
         }
       }
       if(!kmInfo&&alvo.geometry&&alvo.geometry.length>1){
         const dist=calcularKMnaVia(lat,lon,alvo);
+        console.log('[Rodovia] Distância calculada:', dist);
         if(dist!==null){const ki=parseFloat((alvo.tags||{})['loc_ref']||(alvo.tags||{})['ref:km:from']||'0')||0;kmInfo=(ki+dist).toFixed(1);kmSource='CALC GEOM';}
       }
     }
 
+    console.log('[Rodovia] Resultado final:', rodoviaName, kmInfo);
     $('rod-name').textContent=rodoviaName;
     if(kmInfo){$('rod-km').textContent='KM '+kmInfo;$('rod-km').style.color='var(--accent)';$('rod-km').style.fontSize='26px';}
     else{$('rod-km').textContent=alvo?'KM não mapeado no OSM':'Fora de rodovia mapeada';$('rod-km').style.color='var(--muted)';$('rod-km').style.fontSize='13px';}
     $('rod-source').textContent=kmSource?kmSource+' · OVERPASS':'OVERPASS · OSM';
     if(lastData){lastData.rodovia=rodoviaName;lastData.km=kmInfo?'KM '+kmInfo:'';}
     await preencherMunicipio(lat,lon);
-  } catch(e){ await fallbackNominatim(lat,lon); } finally { overpassPending = false; }
+  } catch(e){
+    console.error('[Rodovia] Erro:', e);
+    await fallbackNominatim(lat,lon);
+  } finally { overpassPending = false; }
 }
 
 async function preencherMunicipio(lat,lon){
