@@ -45,12 +45,12 @@
 
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
-  .rodovia-card { background: linear-gradient(135deg, #0d1520 0%, #101820 100%); border: 1px solid #1e3040; border-radius: 14px; padding: 20px; position: relative; overflow: hidden; }
-  .rodovia-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:linear-gradient(90deg,var(--accent2),var(--accent)); }
-  .rodovia-name { font-family:'JetBrains Mono',monospace; font-size:32px; font-weight:800; color:var(--accent2); letter-spacing:-1px; }
-  .rodovia-km { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--accent); margin-top:4px; }
-  .rodovia-muni { font-size:15px; color:var(--muted); margin-top:6px; }
-  .rodovia-source { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); margin-top:8px; letter-spacing:2px; }
+  .rodovia-card { background: linear-gradient(135deg, #0d1520 0%, #101820 100%); border: 2px solid #1e3040; border-radius: 14px; padding: 28px 24px; position: relative; overflow: hidden; min-height: 160px; display: flex; flex-direction: column; justify-content: center; }
+  .rodovia-card::before { content:''; position:absolute; top:0;left:0;right:0; height:4px; background:linear-gradient(90deg,var(--accent2),var(--accent)); }
+  .rodovia-name { font-family:'JetBrains Mono',monospace; font-size:48px; font-weight:800; color:var(--accent2); letter-spacing:-1px; line-height:1.1; }
+  .rodovia-km { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; color:var(--accent); margin-top:8px; line-height:1.2; }
+  .rodovia-muni { font-size:14px; color:var(--muted); margin-top:12px; }
+  .rodovia-source { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:10px; letter-spacing:2px; }
 
   .acc-bar { height:4px; background:var(--border); border-radius:2px; margin-top:8px; overflow:hidden; }
   .acc-fill { height:100%; background:var(--ok); border-radius:2px; transition:width .5s,background .3s; width:0%; }
@@ -144,7 +144,7 @@
   <div class="rodovia-card">
     <div class="card-label">🛣️ Rodovia / Localização</div>
     <div class="rodovia-name" id="rod-name">—</div>
-    <div class="rodovia-km" id="rod-km" style="color:var(--muted);font-size:15px;">Aguardando GPS...</div>
+    <div class="rodovia-km" id="rod-km">Aguardando GPS...</div>
     <div class="rodovia-muni" id="rod-muni"></div>
     <div class="rodovia-source" id="rod-source"></div>
     <button class="copy-btn" id="copy-btn" onclick="copyAll()">
@@ -355,8 +355,7 @@ function calcularKMnaVia(lat,lon,way) {
 
 async function buscarRodovia(lat,lon) {
   overpassPending = true;
-  $('rod-km').innerHTML='<span class="spinner"></span> buscando rodovia...';
-  $('rod-km').style.color='var(--muted)'; $('rod-km').style.fontSize='14px';
+  $('rod-km').innerHTML='<span class="spinner"></span> buscando...';
   $('rod-source').textContent='';
   console.log('[Rodovia] Iniciando busca em',lat,lon);
   try {
@@ -403,8 +402,8 @@ async function buscarRodovia(lat,lon) {
 
     console.log('[Rodovia] Resultado final:', rodoviaName, kmInfo);
     $('rod-name').textContent=rodoviaName;
-    if(kmInfo){$('rod-km').textContent='KM '+kmInfo;$('rod-km').style.color='var(--accent)';$('rod-km').style.fontSize='26px';}
-    else{$('rod-km').textContent=alvo?'KM não mapeado no OSM':'Fora de rodovia mapeada';$('rod-km').style.color='var(--muted)';$('rod-km').style.fontSize='13px';}
+    if(kmInfo){$('rod-km').textContent='KM '+kmInfo;}
+    else{$('rod-km').textContent=alvo?'KM não mapeado no OSM':'Fora de rodovia mapeada';}
     $('rod-source').textContent=kmSource?kmSource+' · OVERPASS':'OVERPASS · OSM';
     if(lastData){lastData.rodovia=rodoviaName;lastData.km=kmInfo?'KM '+kmInfo:'';}
     await preencherMunicipio(lat,lon);
