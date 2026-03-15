@@ -1,4 +1,4 @@
-const CACHE = 'geoloc-prf-v1';
+const CACHE = 'geoloc-prf-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -26,13 +26,10 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // HTML sempre busca fresh (network-first)
+  // HTML sempre busca fresh (network-first para evitar dados cacheados)
   if (e.request.url.endsWith('.html') || e.request.url.endsWith('/')) {
     e.respondWith(
-      fetch(e.request).then(res => {
-        if (res.ok) return res;
-        return caches.match(e.request) || res;
-      }).catch(() => caches.match(e.request))
+      fetch(e.request).catch(() => caches.match(e.request))
     );
     return;
   }
