@@ -25,6 +25,19 @@ self.addEventListener('fetch', e => {
     e.respondWith(fetch(e.request));
     return;
   }
+
+  // HTML sempre busca fresh (network-first)
+  if (e.request.url.endsWith('.html') || e.request.url.endsWith('/')) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res.ok) return res;
+        return caches.match(e.request) || res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Assets usa cache-first
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
