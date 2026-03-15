@@ -45,10 +45,10 @@
 
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
-  .rodovia-card { background: linear-gradient(135deg, #0d1520 0%, #101820 100%); border: 2px solid #1e3040; border-radius: 14px; padding: 28px 24px; position: relative; overflow: hidden; min-height: 160px; display: flex; flex-direction: column; justify-content: center; }
-  .rodovia-card::before { content:''; position:absolute; top:0;left:0;right:0; height:4px; background:linear-gradient(90deg,var(--accent2),var(--accent)); }
-  .rodovia-name { font-family:'JetBrains Mono',monospace; font-size:48px; font-weight:800; color:var(--accent2); letter-spacing:-1px; line-height:1.1; }
-  .rodovia-km { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:700; color:var(--accent); margin-top:8px; line-height:1.2; }
+  .rodovia-card { background: linear-gradient(135deg, #0d1520 0%, #101820 100%); border: 1px solid #1e3040; border-radius: 14px; padding: 24px; position: relative; overflow: visible; }
+  .rodovia-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:linear-gradient(90deg,var(--accent2),var(--accent)); }
+  .rodovia-name { font-family:'JetBrains Mono',monospace; font-size:44px; font-weight:800; color:var(--accent2); letter-spacing:-1px; line-height:1.1; margin-top:12px; }
+  .rodovia-km { font-family:'JetBrains Mono',monospace; font-size:32px; font-weight:700; color:var(--accent); margin-top:10px; line-height:1.2; }
   .rodovia-muni { font-size:14px; color:var(--muted); margin-top:12px; }
   .rodovia-source { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:10px; letter-spacing:2px; }
 
@@ -143,10 +143,10 @@
   <!-- RODOVIA -->
   <div class="rodovia-card">
     <div class="card-label">🛣️ Rodovia / Localização</div>
-    <div class="rodovia-name" id="rod-name">—</div>
-    <div class="rodovia-km" id="rod-km">Aguardando GPS...</div>
-    <div class="rodovia-muni" id="rod-muni"></div>
-    <div class="rodovia-source" id="rod-source"></div>
+    <div class="rodovia-name" id="rod-name" style="color:var(--accent2);font-size:40px;font-weight:800;margin-top:12px;">—</div>
+    <div class="rodovia-km" id="rod-km" style="color:var(--accent);font-size:30px;font-weight:700;margin-top:8px;">Aguardando GPS...</div>
+    <div class="rodovia-muni" id="rod-muni" style="color:var(--muted);font-size:13px;margin-top:8px;"></div>
+    <div class="rodovia-source" id="rod-source" style="color:var(--muted);font-size:10px;margin-top:6px;letter-spacing:1px;"></div>
     <button class="copy-btn" id="copy-btn" onclick="copyAll()">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
       COPIAR
