@@ -175,19 +175,45 @@ function calcularKMnaVia(lat,lon,geom) {
 async function buscarRodovia(lat,lon) {
   $('rod-km').innerHTML='<span class="spinner"></span> buscando...';
   try {
-    const q=`[out:json][timeout:12];(way(around:150,${lat},${lon})[highway][ref];way(around:150,${lat},${lon})[highway~"^(motorway|trunk|primary|secondary)$"];);out body geom;`;
-    const r=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q)});
-    if(!r.ok) throw new Error('API');
-    const d=await r.json(); const ways=d.elements||[];
+    // Query 1: Vias com referência
+    const q1=`[out:json][timeout:12];(way(around:150,${lat},${lon})[highway][ref];way(around:150,${lat},${lon})[highway~"^(motorway|trunk|primary|secondary)$"];);out body geom;`;
+    const r1=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q1)});
+    if(!r1.ok) throw new Error('API');
+    const d1=await r1.json(); const ways=d1.elements||[];
+
+    // Query 2: Marcos de KM
+    const q2=`[out:json][timeout:8];(node(around:500,${lat},${lon})[highway=milestone];node(around:500,${lat},${lon})["ref:km"];node(around:500,${lat},${lon})["distance"];);out body;`;
+    const r2=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q2)});
+    const d2=r2.ok?await r2.json():{elements:[]};
+    const marcos=d2.elements||[];
+
     const comRef=ways.filter(w=>w.tags&&w.tags.ref);
     const alvo=comRef.length>0?comRef[0]:(ways.length>0?ways[0]:null);
     let rodoviaName='—', kmInfo=null;
+
     if(alvo){
       const tags=alvo.tags||{};
       rodoviaName=tags.ref||tags.name||'—';
-      if(alvo.geometry&&alvo.geometry.length>1){
+
+      // Tentar usar marco mais próximo
+      if(marcos.length>0){
+        let melhor=null,menorD=Infinity;
+        for(const m of marcos){
+          const d=haversine(lat,lon,m.lat,m.lon);
+          if(d<menorD){menorD=d;melhor=m;}
+        }
+        if(melhor){
+          const t=melhor.tags||{};
+          const raw=t['ref:km']||t.distance||t.milestone;
+          if(raw){const val=parseFloat(String(raw).replace(',','.'));if(!isNaN(val)){kmInfo=val.toFixed(1);}}
+        }
+      }
+
+      // Se não achou marco, calcular com geometria
+      if(!kmInfo&&alvo.geometry&&alvo.geometry.length>1){
+        const kmBase=parseFloat(tags['ref:km:from']||tags['loc_ref']||'0')||0;
         const dist=calcularKMnaVia(lat,lon,alvo.geometry);
-        if(dist!==null){kmInfo=(dist).toFixed(1);}
+        if(dist!==null){kmInfo=(kmBase+dist).toFixed(1);}
       }
     }
     $('rod-name').textContent=rodoviaName;
