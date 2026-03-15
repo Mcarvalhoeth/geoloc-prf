@@ -75,6 +75,45 @@
   .install-banner-text { flex:1; font-size:14px; color:var(--text); line-height:1.4; }
   .install-banner-text small { color:var(--muted); font-size:12px; }
   .install-btn { padding:8px 14px; background:var(--accent); color:#000; border:none; border-radius:8px; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; letter-spacing:1px; cursor:pointer; white-space:nowrap; }
+
+  /* Scene Measurement Styles */
+  .scene-section { margin-top:20px; padding-top:12px; border-top:2px solid var(--border); }
+  .zero-point-status { font-size:12px; color:var(--muted); font-family:'JetBrains Mono'; line-height:1.5; }
+  .zero-point-status.active { color:var(--ok); }
+  .btn-clear-zero { display:none; padding:8px 14px; background:none; border:1px solid #ff6b6b; color:#ff6b6b; border-radius:8px; font-family:'Barlow Condensed',sans-serif; font-size:12px; cursor:pointer; margin-left:8px; }
+
+  .distance-card { background:var(--surface); border:2px solid var(--accent2); border-radius:12px; padding:16px 18px; position:relative; }
+  .distance-value { font-family:'JetBrains Mono',monospace; font-size:32px; font-weight:800; color:var(--accent2); }
+
+  .marker-selector-group { display:flex; flex-direction:column; gap:8px; }
+  .marker-select, .marker-input { padding:12px 14px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'Barlow Condensed',sans-serif; font-size:14px; }
+  .marker-select:focus, .marker-input:focus { outline:none; border-color:var(--accent); background:rgba(0,229,255,0.05); }
+  .marker-select option { background:var(--surface); color:var(--text); }
+  .btn-mark { width:100%; padding:16px; background:var(--accent2); color:#000; border:none; border-radius:12px; font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:900; letter-spacing:1px; cursor:pointer; }
+
+  .markers-list { display:flex; flex-direction:column; gap:8px; max-height:400px; overflow-y:auto; }
+  .marker-item { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; padding:12px; background:rgba(0,229,255,0.05); border:1px solid var(--border); border-radius:8px; font-size:12px; align-items:center; }
+  .marker-item.corpo { background:rgba(255,107,107,0.05); border-color:rgba(255,107,107,0.3); }
+  .marker-item.colisao { background:rgba(255,107,0,0.05); border-color:rgba(255,107,0,0.3); }
+  .marker-item.frenagem { background:rgba(255,204,0,0.05); border-color:rgba(255,204,0,0.3); }
+  .marker-item.roda_esq { background:rgba(0,214,143,0.05); border-color:rgba(0,214,143,0.3); }
+
+  .marker-item-label { font-family:'JetBrains Mono',monospace; font-weight:700; }
+  .marker-item-distance { font-family:'JetBrains Mono',monospace; color:var(--accent); }
+  .marker-item-coords { font-size:11px; color:var(--muted); }
+  .marker-item-time { font-size:10px; color:var(--muted); }
+
+  .marker-btn-group { display:flex; gap:4px; }
+  .marker-btn { padding:6px 8px; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-size:11px; cursor:pointer; }
+  .marker-btn.delete { border-color:#ff6b6b; color:#ff6b6b; }
+
+  .btn-export-pdf { width:100%; padding:18px; background:var(--ok); color:#000; border:none; border-radius:12px; font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:900; letter-spacing:2px; text-transform:uppercase; cursor:pointer; }
+  .btn-export-pdf:disabled { background:var(--muted); opacity:0.5; cursor:not-allowed; }
+
+  @media(max-width:480px) {
+    .marker-item { grid-template-columns:1fr auto; }
+    .marker-item-label { grid-column:1/-1; }
+  }
 </style>
 </head>
 <body>
@@ -148,11 +187,51 @@
   <div class="ts" id="ts">--</div>
   <button class="btn-main" id="btn-main" onclick="toggleTracking()">INICIAR RASTREAMENTO</button>
 
+  <!-- SCENE MEASUREMENT SECTION -->
+  <div class="scene-section">
+    <div class="card">
+      <div class="card-label">📍 Ponto Zero</div>
+      <div class="zero-point-status" id="zero-point-status">Ponto Zero não definido</div>
+      <button class="btn-main" id="btn-set-zero" style="margin-top:12px;background:var(--accent2);">DEFINIR PONTO ZERO</button>
+      <button class="btn-clear-zero" id="btn-clear-zero" onclick="">LIMPAR</button>
+    </div>
+
+    <div class="distance-card">
+      <div class="card-label">📏 DISTÂNCIA DO PONTO ZERO</div>
+      <div class="distance-value" id="distance-value">—</div>
+      <div class="card-sub">metros</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">➕ Marcar Ponto</div>
+      <div class="marker-selector-group">
+        <select id="marker-select" class="marker-select">
+          <option value="corpo">🪦 Corpo</option>
+          <option value="colisao">💥 Colisão</option>
+          <option value="frenagem">🛑 Frenagem</option>
+          <option value="roda_esq">🚗 Roda Dianteira Esquerda</option>
+          <option value="outro">📍 Outro</option>
+        </select>
+        <input type="text" id="marker-desc" class="marker-input" placeholder="Descrição (opcional)">
+        <button class="btn-mark" id="btn-mark">MARCAR PONTO ATUAL</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">📋 Marcadores Registrados (<span id="markers-count">0</span>)</div>
+      <div class="markers-list" id="markers-list">
+        <div style="padding:20px;text-align:center;color:var(--muted);">Nenhum marcador registrado</div>
+      </div>
+      <button class="btn-export-pdf" id="btn-export-pdf" disabled style="margin-top:12px;">📄 EXPORTAR PARA PDF</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
 let watchId = null, tracking = false, lastData = null;
 let lastOverpassCall = 0;
+let overpassPending = false;
 const OVERPASS_INTERVAL = 8000;
 let deferredPrompt = null;
 
@@ -191,7 +270,7 @@ function startTracking() {
   $('status-txt').textContent = 'BUSCANDO';
   $('err-msg').style.display = 'none';
   watchId = navigator.geolocation.watchPosition(onSuccess, onError, {
-    enableHighAccuracy: true, timeout: 15000, maximumAge: 2000
+    enableHighAccuracy: true, timeout: 30000, maximumAge: 2000
   });
 }
 
@@ -211,10 +290,10 @@ function onSuccess(pos) {
   $('dot').className = 'status-dot active';
   $('status-txt').textContent = 'AO VIVO';
 
-  $('lat').textContent = latitude.toFixed(6); $('lat').style.fontSize='22px'; $('lat').style.color='var(--accent)';
-  $('lon').textContent = longitude.toFixed(6); $('lon').style.fontSize='22px'; $('lon').style.color='var(--accent)';
-  $('alt').textContent = altitude ? Math.round(altitude) : 'N/A'; $('alt').style.color='var(--accent2)'; $('alt').style.fontSize='26px';
-  $('spd').textContent = speed ? (speed*3.6).toFixed(0) : '0'; $('spd').style.color='var(--accent2)'; $('spd').style.fontSize='26px';
+  $('lat').textContent = (latitude || 0).toFixed(6); $('lat').style.fontSize='22px'; $('lat').style.color='var(--accent)';
+  $('lon').textContent = (longitude || 0).toFixed(6); $('lon').style.fontSize='22px'; $('lon').style.color='var(--accent)';
+  $('alt').textContent = altitude != null ? Math.round(altitude) : 'N/A'; $('alt').style.color='var(--accent2)'; $('alt').style.fontSize='26px';
+  $('spd').textContent = speed != null ? (speed*3.6).toFixed(0) : '0'; $('spd').style.color='var(--accent2)'; $('spd').style.fontSize='26px';
 
   const accM = Math.round(accuracy);
   $('acc').textContent = accM + ' m'; $('acc').style.fontSize='26px';
@@ -227,7 +306,12 @@ function onSuccess(pos) {
   $('ts').textContent = now.toLocaleTimeString('pt-BR')+' · '+now.toLocaleDateString('pt-BR');
   lastData = { latitude, longitude, altitude, speed, accuracy };
 
-  if (Date.now() - lastOverpassCall > OVERPASS_INTERVAL) {
+  // Atualizar distância da cena
+  if (sceneUI) {
+    sceneUI.updateDistanceDisplay();
+  }
+
+  if (Date.now() - lastOverpassCall > OVERPASS_INTERVAL && !overpassPending) {
     lastOverpassCall = Date.now();
     buscarRodovia(latitude, longitude);
   }
@@ -270,16 +354,19 @@ function calcularKMnaVia(lat,lon,way) {
 }
 
 async function buscarRodovia(lat,lon) {
+  overpassPending = true;
   $('rod-km').innerHTML='<span class="spinner"></span> buscando rodovia...';
   $('rod-km').style.color='var(--muted)'; $('rod-km').style.fontSize='14px';
   $('rod-source').textContent='';
   try {
     const q1=`[out:json][timeout:12];(way(around:120,${lat},${lon})[highway][ref];way(around:120,${lat},${lon})[highway~"^(motorway|trunk|primary|secondary)$"];);out body geom;`;
     const r1=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q1)});
+    if(!r1.ok) throw new Error(`HTTP ${r1.status}`);
     const d1=await r1.json(); const ways=d1.elements||[];
 
     const q2=`[out:json][timeout:8];(node(around:600,${lat},${lon})[highway=milestone];node(around:600,${lat},${lon})["distance"];node(around:600,${lat},${lon})["ref:km"];);out body;`;
     const r2=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q2)});
+    if(!r2.ok) throw new Error(`HTTP ${r2.status}`);
     const d2=await r2.json(); const marcos=d2.elements||[];
 
     const comRef=ways.filter(w=>w.tags&&w.tags.ref);
@@ -310,7 +397,7 @@ async function buscarRodovia(lat,lon) {
     $('rod-source').textContent=kmSource?kmSource+' · OVERPASS':'OVERPASS · OSM';
     if(lastData){lastData.rodovia=rodoviaName;lastData.km=kmInfo?'KM '+kmInfo:'';}
     await preencherMunicipio(lat,lon);
-  } catch(e){ await fallbackNominatim(lat,lon); }
+  } catch(e){ await fallbackNominatim(lat,lon); } finally { overpassPending = false; }
 }
 
 async function preencherMunicipio(lat,lon){
@@ -343,8 +430,39 @@ function copyAll(){
   navigator.clipboard.writeText(txt).then(()=>{
     const btn=$('copy-btn'); btn.classList.add('copied'); btn.textContent='✓ COPIADO';
     setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> COPIAR';},2000);
-  }).catch(()=>{const el=document.createElement('textarea');el.value=txt;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);});
+  }).catch(()=>{
+    try{const el=document.createElement('textarea');el.value=txt;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);const btn=$('copy-btn');btn.classList.add('copied');btn.textContent='✓ COPIADO';setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> COPIAR';},2000);}catch(e){showError('Erro ao copiar dados.');}
+  });
 }
 </script>
+
+<!-- Bibliotecas para exportação PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Scene Management Scripts -->
+<script src="scene-manager.js"></script>
+<script src="scene-ui.js"></script>
+<script src="pdf-generator.js"></script>
+
+<script>
+// Inicializar sistema de cena
+let sceneManager = null;
+let sceneUI = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  sceneManager = new SceneManager();
+  sceneUI = new SceneUIManager(sceneManager);
+  sceneUI.updateZeroPointUI();
+  sceneUI.renderMarkersList();
+
+  // Anexar handler ao botão export
+  const btnExport = $('btn-export-pdf');
+  if (btnExport) {
+    btnExport.addEventListener('click', () => sceneUI.exportPDF());
+  }
+});
+</script>
+
 </body>
 </html>

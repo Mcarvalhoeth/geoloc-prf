@@ -22,6 +22,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   // Requisições externas (GPS APIs) sempre vai na rede
   if (!e.request.url.startsWith(self.location.origin)) {
+    e.respondWith(fetch(e.request));
     return;
   }
   e.respondWith(
