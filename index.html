@@ -75,6 +75,45 @@
   .install-banner-text { flex:1; font-size:14px; color:var(--text); line-height:1.4; }
   .install-banner-text small { color:var(--muted); font-size:12px; }
   .install-btn { padding:8px 14px; background:var(--accent); color:#000; border:none; border-radius:8px; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:14px; letter-spacing:1px; cursor:pointer; white-space:nowrap; }
+
+  /* Scene Measurement Styles */
+  .scene-section { margin-top:20px; padding-top:12px; border-top:2px solid var(--border); }
+  .zero-point-status { font-size:12px; color:var(--muted); font-family:'JetBrains Mono'; line-height:1.5; }
+  .zero-point-status.active { color:var(--ok); }
+  .btn-clear-zero { display:none; padding:8px 14px; background:none; border:1px solid #ff6b6b; color:#ff6b6b; border-radius:8px; font-family:'Barlow Condensed',sans-serif; font-size:12px; cursor:pointer; margin-left:8px; }
+
+  .distance-card { background:var(--surface); border:2px solid var(--accent2); border-radius:12px; padding:16px 18px; position:relative; }
+  .distance-value { font-family:'JetBrains Mono',monospace; font-size:32px; font-weight:800; color:var(--accent2); }
+
+  .marker-selector-group { display:flex; flex-direction:column; gap:8px; }
+  .marker-select, .marker-input { padding:12px 14px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'Barlow Condensed',sans-serif; font-size:14px; }
+  .marker-select:focus, .marker-input:focus { outline:none; border-color:var(--accent); background:rgba(0,229,255,0.05); }
+  .marker-select option { background:var(--surface); color:var(--text); }
+  .btn-mark { width:100%; padding:16px; background:var(--accent2); color:#000; border:none; border-radius:12px; font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:900; letter-spacing:1px; cursor:pointer; }
+
+  .markers-list { display:flex; flex-direction:column; gap:8px; max-height:400px; overflow-y:auto; }
+  .marker-item { display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:8px; padding:12px; background:rgba(0,229,255,0.05); border:1px solid var(--border); border-radius:8px; font-size:12px; align-items:center; }
+  .marker-item.corpo { background:rgba(255,107,107,0.05); border-color:rgba(255,107,107,0.3); }
+  .marker-item.colisao { background:rgba(255,107,0,0.05); border-color:rgba(255,107,0,0.3); }
+  .marker-item.frenagem { background:rgba(255,204,0,0.05); border-color:rgba(255,204,0,0.3); }
+  .marker-item.roda_esq { background:rgba(0,214,143,0.05); border-color:rgba(0,214,143,0.3); }
+
+  .marker-item-label { font-family:'JetBrains Mono',monospace; font-weight:700; }
+  .marker-item-distance { font-family:'JetBrains Mono',monospace; color:var(--accent); }
+  .marker-item-coords { font-size:11px; color:var(--muted); }
+  .marker-item-time { font-size:10px; color:var(--muted); }
+
+  .marker-btn-group { display:flex; gap:4px; }
+  .marker-btn { padding:6px 8px; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--muted); font-size:11px; cursor:pointer; }
+  .marker-btn.delete { border-color:#ff6b6b; color:#ff6b6b; }
+
+  .btn-export-pdf { width:100%; padding:18px; background:var(--ok); color:#000; border:none; border-radius:12px; font-family:'Barlow Condensed',sans-serif; font-size:18px; font-weight:900; letter-spacing:2px; text-transform:uppercase; cursor:pointer; }
+  .btn-export-pdf:disabled { background:var(--muted); opacity:0.5; cursor:not-allowed; }
+
+  @media(max-width:480px) {
+    .marker-item { grid-template-columns:1fr auto; }
+    .marker-item-label { grid-column:1/-1; }
+  }
 </style>
 </head>
 <body>
@@ -147,6 +186,45 @@
 
   <div class="ts" id="ts">--</div>
   <button class="btn-main" id="btn-main" onclick="toggleTracking()">INICIAR RASTREAMENTO</button>
+
+  <!-- SCENE MEASUREMENT SECTION -->
+  <div class="scene-section">
+    <div class="card">
+      <div class="card-label">📍 Ponto Zero</div>
+      <div class="zero-point-status" id="zero-point-status">Ponto Zero não definido</div>
+      <button class="btn-main" id="btn-set-zero" style="margin-top:12px;background:var(--accent2);">DEFINIR PONTO ZERO</button>
+      <button class="btn-clear-zero" id="btn-clear-zero" onclick="">LIMPAR</button>
+    </div>
+
+    <div class="distance-card">
+      <div class="card-label">📏 DISTÂNCIA DO PONTO ZERO</div>
+      <div class="distance-value" id="distance-value">—</div>
+      <div class="card-sub">metros</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">➕ Marcar Ponto</div>
+      <div class="marker-selector-group">
+        <select id="marker-select" class="marker-select">
+          <option value="corpo">🪦 Corpo</option>
+          <option value="colisao">💥 Colisão</option>
+          <option value="frenagem">🛑 Frenagem</option>
+          <option value="roda_esq">🚗 Roda Dianteira Esquerda</option>
+          <option value="outro">📍 Outro</option>
+        </select>
+        <input type="text" id="marker-desc" class="marker-input" placeholder="Descrição (opcional)">
+        <button class="btn-mark" id="btn-mark">MARCAR PONTO ATUAL</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">📋 Marcadores Registrados (<span id="markers-count">0</span>)</div>
+      <div class="markers-list" id="markers-list">
+        <div style="padding:20px;text-align:center;color:var(--muted);">Nenhum marcador registrado</div>
+      </div>
+      <button class="btn-export-pdf" id="btn-export-pdf" disabled style="margin-top:12px;">📄 EXPORTAR PARA PDF</button>
+    </div>
+  </div>
 
 </div>
 
@@ -227,6 +305,11 @@ function onSuccess(pos) {
   const now = new Date();
   $('ts').textContent = now.toLocaleTimeString('pt-BR')+' · '+now.toLocaleDateString('pt-BR');
   lastData = { latitude, longitude, altitude, speed, accuracy };
+
+  // Atualizar distância da cena
+  if (sceneUI) {
+    sceneUI.updateDistanceDisplay();
+  }
 
   if (Date.now() - lastOverpassCall > OVERPASS_INTERVAL && !overpassPending) {
     lastOverpassCall = Date.now();
@@ -352,5 +435,34 @@ function copyAll(){
   });
 }
 </script>
+
+<!-- Bibliotecas para exportação PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Scene Management Scripts -->
+<script src="scene-manager.js"></script>
+<script src="scene-ui.js"></script>
+<script src="pdf-generator.js"></script>
+
+<script>
+// Inicializar sistema de cena
+let sceneManager = null;
+let sceneUI = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  sceneManager = new SceneManager();
+  sceneUI = new SceneUIManager(sceneManager);
+  sceneUI.updateZeroPointUI();
+  sceneUI.renderMarkersList();
+
+  // Anexar handler ao botão export
+  const btnExport = $('btn-export-pdf');
+  if (btnExport) {
+    btnExport.addEventListener('click', () => sceneUI.exportPDF());
+  }
+});
+</script>
+
 </body>
 </html>
