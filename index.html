@@ -48,6 +48,11 @@
     .ts { text-align:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:2px; padding:8px 0; }
     .spinner { display:inline-block; width:12px; height:12px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
     @keyframes spin { to { transform:rotate(360deg); } }
+    .btn-share { width:100%; padding:14px; background:transparent; color:var(--accent); border:1px solid var(--accent); border-radius:12px; font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all .2s; display:none; margin-top:-4px; }
+    .btn-share:active { background:var(--accent); color:#000; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#00d68f; color:#000; padding:10px 20px; border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; letter-spacing:1px; opacity:0; transition:opacity .3s; pointer-events:none; z-index:999; }
+    .toast.show { opacity:1; }
+    .view-banner { background:linear-gradient(135deg,#0d1a10,#101a14); border:1px solid #1e4030; border-radius:12px; padding:14px 18px; color:#00d68f; font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:1px; display:none; }
   </style>
 </head>
 <body>
@@ -63,6 +68,7 @@
 <div class="main">
 
   <div class="error" id="error"><span id="error-text"></span></div>
+  <div class="view-banner" id="view-banner">📡 MODO VISUALIZAÇÃO REMOTA — localização recebida de outro dispositivo</div>
 
   <!-- RODOVIA / KM -->
   <div class="rodovia-card">
@@ -86,8 +92,10 @@
 
   <div class="ts" id="ts">—</div>
   <button class="btn-main" id="btn-main" onclick="toggleTracking()">INICIAR RASTREAMENTO</button>
+  <button class="btn-share" id="btn-share" onclick="compartilharLocalizacao()">📡 COMPARTILHAR LOCALIZAÇÃO</button>
 
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
 let watchId = null, tracking = false, lastData = null;
@@ -97,6 +105,32 @@ const $ = id => document.getElementById(id);
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
+
+// Remote control: check URL params for shared location
+(function() {
+  const p = new URLSearchParams(location.search);
+  if (p.has('lat') && p.has('lon')) {
+    const lat = parseFloat(p.get('lat'));
+    const lon = parseFloat(p.get('lon'));
+    if (isNaN(lat) || isNaN(lon)) return;
+    $('view-banner').style.display = 'block';
+    $('lat').textContent = lat.toFixed(6);
+    $('lon').textContent = lon.toFixed(6);
+    if (p.get('road')) $('rod-name').textContent = decodeURIComponent(p.get('road'));
+    if (p.get('km')) $('rod-km').textContent = 'KM ' + decodeURIComponent(p.get('km'));
+    if (p.get('muni')) $('rod-muni').textContent = decodeURIComponent(p.get('muni'));
+    if (p.get('ts')) $('ts').textContent = decodeURIComponent(p.get('ts'));
+    $('btn-main').style.display = 'none';
+    const mapBtn = document.createElement('a');
+    mapBtn.href = `https://www.google.com/maps?q=${lat},${lon}`;
+    mapBtn.target = '_blank';
+    mapBtn.rel = 'noopener';
+    mapBtn.className = 'btn-main';
+    mapBtn.style.cssText = 'display:block;text-align:center;text-decoration:none;margin-top:0;';
+    mapBtn.textContent = 'VER NO GOOGLE MAPS';
+    $('btn-main').parentNode.insertBefore(mapBtn, $('btn-main').nextSibling);
+  }
+})();
 
 function toggleTracking() { tracking ? stopTracking() : startTracking(); }
 
@@ -120,6 +154,35 @@ function stopTracking() {
   $('btn-main').className = 'btn-main';
   $('dot').className = 'dot';
   $('status-txt').textContent = 'OFFLINE';
+  $('btn-share').style.display = 'none';
+}
+
+function compartilharLocalizacao() {
+  if (!lastData) return;
+  const p = new URLSearchParams();
+  p.set('lat', lastData.latitude.toFixed(6));
+  p.set('lon', lastData.longitude.toFixed(6));
+  const road = $('rod-name').textContent;
+  const km = $('rod-km').textContent.replace('KM ','');
+  const muni = $('rod-muni').textContent;
+  const ts = $('ts').textContent;
+  if (road && road !== '—') p.set('road', road);
+  if (km && km !== 'não disponível' && km !== 'buscando...') p.set('km', km);
+  if (muni) p.set('muni', muni);
+  if (ts && ts !== '—') p.set('ts', ts);
+  const url = location.origin + location.pathname + '?' + p.toString();
+  if (navigator.share) {
+    navigator.share({ title: 'GeoLoc PRF — Localização', text: `${road} KM ${km}\n${muni}`, url });
+  } else {
+    navigator.clipboard.writeText(url).then(() => showToast('LINK COPIADO!')).catch(() => {
+      prompt('Copie o link:', url);
+    });
+  }
+}
+
+function showToast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 function onSuccess(pos) {
@@ -133,6 +196,7 @@ function onSuccess(pos) {
   const now = new Date();
   $('ts').textContent = now.toLocaleTimeString('pt-BR') + ' · ' + now.toLocaleDateString('pt-BR');
   lastData = { latitude, longitude };
+  $('btn-share').style.display = 'block';
   buscarRodovia(latitude, longitude);
 }
 
