@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carrossel — Delara e Carvalho Imóveis</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --gold: #C9A84C;
+      --gold-light: #E8C96A;
+      --black: #0A0A0A;
+      --white: #F5F5F5;
+      --gray: #888888;
+      --slide-w: 1080px;
+      --slide-h: 1350px;
+      --scale: 0.35;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a1a1a;
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    h1.page-title {
+      text-align: center;
+      color: var(--gold);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 300;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    p.page-sub {
+      text-align: center;
+      color: var(--gray);
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 48px;
+    }
+
+    .carousel-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      justify-content: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .slide-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .slide-label {
+      color: var(--gold);
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .slide {
+      width: calc(var(--slide-w) * var(--scale));
+      height: calc(var(--slide-h) * var(--scale));
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      flex-shrink: 0;
+    }
+
+    /* ─── SLIDE 1 — Gancho ─── */
+    .slide-1 {
+      background: var(--black);
+    }
+
+    .slide-1 .bg-image {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to bottom, rgba(10,10,10,0.3) 0%, rgba(10,10,10,0.85) 60%, rgba(10,10,10,0.98) 100%),
+        url('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80') center/cover no-repeat;
+    }
+
+    .slide-1 .content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: calc(48px * var(--scale));
+    }
+
+    .slide-1 .tag {
+      font-size: calc(11px * var(--scale));
+      letter-spacing: calc(4px * var(--scale));
+      color: var(--gold);
+      text-transform: uppercase;
+      font-weight: 500;
+      margin-bottom: calc(20px * var(--scale));
+    }
+
+    .slide-1 h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: calc(72px * var(--scale));
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.1;
+      margin-bottom: calc(28px * var(--scale));
+    }
+
+    .slide-1 h2 span {
+      color: var(--gold);
+    }
+
+    .slide-1 .divider {
+      width: calc(60px * var(--scale));
+      height: calc(1px * var(--scale));
+      background: var(--gold);
+      margin-bottom: calc(24px * var(--scale));
+    }
+
+    .slide-1 p {
+      font-size: calc(18px * var(--scale));
+      color: rgba(245,245,245,0.75);
+      font-weight: 300;
+      letter-spacing: calc(1px * var(--scale));
+      line-height: 1.7;
+    }
+
+    .slide-1 .logo {
+      position: absolute;
+      bottom: calc(32px * var(--scale));
+      right: calc(32px * var(--scale));
+      font-family: 'Cormorant Garamond', serif;
+      font-size: calc(13px * var(--scale));
+      letter-spacing: calc(3px * var(--scale));
+      color: var(--gold);
+      text-transform: uppercase;
+      text-align: right;
+      line-height: 1.5;
+    }
+
+    .slide-1 .slide-number {
+      position: absolute;
+      top: calc(32px * var(--scale));
+      right: calc(32px * var(--scale));
+      font-size: calc(11px * var(--scale));
+      color: var(--gold);
+      letter-spacing: calc(2px * var(--scale));
+    }
+
+    /* ─── SLIDE 2 — Oportunidade ─── */
+    .slide-2 {
+      background: var(--white);
+    }
+
+    .slide-2 .gold-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: calc(6px * var(--scale));
+      background: var(--gold);
+    }
+
+    .slide-2 .content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: calc(60px * var(--scale)) calc(60px * var(--scale)) calc(60px * var(--scale)) calc(80px * var(--scale));
+    }
+
+    .slide-2 .tag {
+      font-size: calc(10px * var(--scale));
+      letter-spacing: calc(4px * var(--scale));
+      color: var(--gold);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: calc(32px * var(--scale));
+    }
+
+    .slide-2 h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: calc(68px * var(--scale));
+      font-weight: 700;
+      color: var(--black);
+      line-height: 1.1;
+      margin-bottom: calc(40px * var(--scale));
+    }
+
+    .slide-2 h2 em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .slide-2 .points {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: calc(20px * var(--scale));
+    }
+
+    .slide-2 .points li {
+      display: flex;
+      align-items: flex-start;
+      gap: calc(16px * var(--scale));
+      font-size: calc(16px * var(--scale));
+      color: #333;
+      font-weight: 300;
+      line-height: 1.5;
+    }
+
+    .slide-2 .points li::before {
+      content: '—';
+      color: var(--gold);
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .slide-2 .divider-h {
+      width: calc(50px * var(--scale));
+      height: calc(1px * var(--scale));
+      background: var(--gold);
+      margin: calc(36px * var(--scale)) 0;
+    }
+
+    .slide-2 .sub {
+      font-size: calc(13px * var(--scale));
+      color: var(--gray);
+      letter-spacing: calc(1px * var(--scale));
+      font-weight: 400;
+      font-style: italic;
+    }
+
+    .slide-2 .logo {
+      position: absolute;
+      bottom: calc(32px * var(--scale));
+      right: calc(32px * var(--scale));
+      font-family: 'Cormorant Garamond', serif;
+      font-size: calc(12px * var(--scale));
+      letter-spacing: calc(2px * var(--scale));
+      color: #999;
+      text-transform: uppercase;
+      text-align: right;
+    }
+
+    .slide-2 .slide-number {
+      position: absolute;
+      top: calc(32px * var(--scale));
+      right: calc(32px * var(--scale));
+      font-size: calc(11px * var(--scale));
+      color: #ccc;
+      letter-spacing: calc(2px * var(--scale));
+    }
+
+    /* ─── SLIDE 3 — Alto Padrão ─── */
+    .slide-3 {
+      background: var(--black);
+      background-image:
+        radial-gradient(ellipse at 80% 20%, rgba(201,168,76,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 20% 80%, rgba(201,168,76,0.05) 0%, transparent 60%);
+    }
+
+    .slide-3 .marble-bg {
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E") repeat;
+      opacity: 0.4;
+    }
+
+    .slide-3 .content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: calc(60px * var(--scale));
+    }
+
+    .slide-3 .icon-wrapper {
+      margin-bottom: calc(40px * var(--scale));
+    }
+
+    .slide-3 .icon-wrapper svg {
+      width: calc(52px * var(--scale));
+      height: calc(52px * var(--scale));
+    }
+
+    .slide-3 .tag {
+      font-size: calc(10px * var(--scale));
+      letter-spacing: calc(4px * var(--scale));
+      color: var(--gold);
+      text-transform: uppercase;
+      font-weight: 500;
+      margin-bottom: calc(24px * var(--scale));
+    }
+
+    .slide-3 h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: calc(62px * var(--scale));
+      font-weight: 600;
+      color: var(--white);
+      line-height: 1.15;
+      margin-bottom: calc(40px * var(--scale));
+    }
+
+    .slide-3 .gold-line {
+      width: calc(80px * var(--scale));
+      height: calc(1px * var(--scale));
+      background: linear-gradient(to right, var(--gold), transparent);
+      margin-bottom: calc(36px * var(--scale));
+    }
+
+    .slide-3 .stats {
+      display: flex;
+      flex-direction: column;
+      gap: calc(20px * var(--scale));
+    }
+
+    .slide-3 .stat-item {
+      display: flex;
+      align-items: center;
+      gap: calc(20px * var(--scale));
+    }
+
+    .slide-3 .stat-bullet {
+      width: calc(8px * var(--scale));
+      height: calc(8px * var(--scale));
+      background: var(--gold);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .slide-3 .stat-text {
+      font-size: calc(15px * var(--scale));
+      color: rgba(245,245,245,0.8);
+      font-weight: 300;
+      line-height: 1.5;
+    }
+
+    .slide-3 .logo {
+      position: absolute;
+      bottom: calc(32px * var(--scale));
+      right: calc(32px * var(--scale));
+      font-family: 'Cormorant Garamond', serif;
+      font-size: calc(12px * var(--scale));
+      letter-spacing: calc(2px * var(--scale));
+      color: var(--gold);
+      text-transform: uppercase;
+      text-align: right;
+      opacity: 0.7;
+    }
+
+    .slide-3 .slide-number {
+      position: absolute;
+      top: calc(32px * var(--scale));
+      right: calc(32px * var(--scale));
+      font-size: calc(11px * var(--scale));
+      color: rgba(201,168,76,0.5);
+      letter-spacing: calc(2px * var(--scale));
+    }
+
+    /* ─── SLIDE 4 — Urgência ─── */
+    .slide-4 {
+      background: var(--white);
+    }
+
+    .slide-4 .content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: calc(60px * var(--scale));
+    }
+
+    .slide-4 .big-number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: calc(130px * var(--scale));
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 0.9;
+      margin-bottom: calc(8px * var(--scale));
+      letter-spacing: calc(-4px * var(--scale));
+    }
+
+    .slide-4 .arrow-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: calc(28px * var(--scale));
+      color: #ccc;
+      margin-bottom: calc(36px * var(--scale));
+      font-style: italic;
+    }
+
+    .slide-4 h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: calc(54px * var(--scale));
+      font-weight: 700;
+      color: var(--black);
+      line-height: 1.1;
+      margin-bottom: calc(32px * var(--scale));
+    }
+
+    .slide-4 .divider-h {
+      width: calc(50px * var(--scale));
+      height: calc(2px * var(--scale));
+      background: var(--gold);
+      margin-bottom: calc(28px * var(--scale));
+    }
+
+    .slide-4 p {
+      font-size: calc(16px * var(--scale));
+      color: #555;
+      font-weight: 300;
+      line-height: 1.7;
+    }
+
+    .slide-4 p strong {
+      color: var(--black);
+      font-weight: 600;
+    }
+
+    .slide-4 .logo {
+      position: absolute;
+      bottom: calc(32px * var(--scale));
+      right: calc(32px * var(--scale));
+      font-family: 'Cormorant Garamond', serif;
+      font-size: calc(12px * var(--scale));
+      letter-spacing: calc(2px * var(--scale));
+      color: #bbb;
+      text-transform: uppercase;
+    }
+
+    .slide-4 .slide-number {
+      position: absolute;
+      top: calc(32px * var(--scale));
+      right: calc(32px * var(--scale));
+      font-size: calc(11px * var(--scale));
+      color: #ccc;
+      letter-spacing: calc(2px * var(--scale));
+    }
+
+    /* ─── SLIDE 5 — CTA Final ─── */
+    .slide-5 {
+      background: var(--black);
+      background-image: radial-gradient(ellipse at 50% 40%, rgba(201,168,76,0.12) 0%, transparent 65%);
+    }
+
+    .slide-5 .content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: calc(60px * var(--scale));
+      text-align: center;
+    }
+
+    .slide-5 .top-line {
+      width: calc(40px * var(--scale));
+      height: calc(1px * var(--scale));
+      background: var(--gold);
+      margin-bottom: calc(40px * var(--scale));
+    }
+
+    .slide-5 .logo-main {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: calc(22px * var(--scale));
+      letter-spacing: calc(6px * var(--scale));
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: calc(6px * var(--scale));
+    }
+
+    .slide-5 .logo-sub {
+      font-family: 'Montserrat', sans-serif;
+      font-size: calc(9px * var(--scale));
+      letter-spacing: calc(4px * var(--scale));
+      color: rgba(201,168,76,0.6);
+      text-transform: uppercase;
+      font-weight: 300;
+      margin-bottom: calc(56px * var(--scale));
+    }
+
+    .slide-5 h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: calc(56px * var(--scale));
+      font-weight: 600;
+      color: var(--white);
+      line-height: 1.2;
+      margin-bottom: calc(28px * var(--scale));
+    }
+
+    .slide-5 p {
+      font-size: calc(15px * var(--scale));
+      color: rgba(245,245,245,0.65);
+      font-weight: 300;
+      line-height: 1.8;
+      margin-bottom: calc(52px * var(--scale));
+    }
+
+    .slide-5 .cta-btn {
+      border: calc(1px * var(--scale)) solid var(--gold);
+      padding: calc(20px * var(--scale)) calc(48px * var(--scale));
+      font-family: 'Montserrat', sans-serif;
+      font-size: calc(13px * var(--scale));
+      letter-spacing: calc(3px * var(--scale));
+      color: var(--gold);
+      text-transform: uppercase;
+      font-weight: 500;
+      margin-bottom: calc(24px * var(--scale));
+    }
+
+    .slide-5 .dm-icon {
+      display: flex;
+      align-items: center;
+      gap: calc(10px * var(--scale));
+      font-size: calc(12px * var(--scale));
+      color: rgba(201,168,76,0.5);
+      letter-spacing: calc(2px * var(--scale));
+    }
+
+    .slide-5 .dm-icon svg {
+      width: calc(18px * var(--scale));
+      height: calc(18px * var(--scale));
+    }
+
+    .slide-5 .bottom-line {
+      width: calc(40px * var(--scale));
+      height: calc(1px * var(--scale));
+      background: rgba(201,168,76,0.3);
+      margin-top: calc(48px * var(--scale));
+    }
+
+    /* ─── Download hint ─── */
+    .download-hint {
+      text-align: center;
+      margin-top: 48px;
+      color: var(--gray);
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    @media print {
+      body { background: white; padding: 0; }
+      .page-title, .page-sub, .download-hint { display: none; }
+      .carousel-wrapper { gap: 0; flex-direction: column; align-items: center; }
+      .slide-container { page-break-after: always; margin: 0; }
+      :root { --scale: 0.75; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1 class="page-title">Delara &amp; Carvalho Imóveis</h1>
+  <p class="page-sub">Carrossel · Juros e Mercado Imobiliário · 5 Slides</p>
+
+  <div class="carousel-wrapper">
+
+    <!-- SLIDE 1 -->
+    <div class="slide-container">
+      <span class="slide-label">01 — Gancho</span>
+      <div class="slide slide-1">
+        <div class="bg-image"></div>
+        <div class="content">
+          <span class="tag">Mercado Imobiliário · 2026</span>
+          <h2>Os juros subiram.<br/><span>E o imóvel dos</span><br/>seus sonhos ficou<br/>mais perto.</h2>
+          <div class="divider"></div>
+          <p>Enquanto todo mundo recua,<br/>quem entende o mercado avança.</p>
+        </div>
+        <div class="logo">Delara &amp; Carvalho<br/>Imóveis</div>
+        <div class="slide-number">01 / 05</div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2 -->
+    <div class="slide-container">
+      <span class="slide-label">02 — Oportunidade</span>
+      <div class="slide slide-2">
+        <div class="gold-bar"></div>
+        <div class="content">
+          <span class="tag">Por que agora é o momento</span>
+          <h2>Alta nos juros =<br/><em>menos concorrência</em><br/>para você.</h2>
+          <ul class="points">
+            <li>A maioria desiste. Os imóveis ficam disponíveis.</li>
+            <li>Os preços param de subir. A negociação favorece você.</li>
+            <li>Os bons compradores sabem: esse é o momento.</li>
+          </ul>
+          <div class="divider-h"></div>
+          <span class="sub">Inteligência imobiliária começa aqui.</span>
+        </div>
+        <div class="logo">Delara &amp; Carvalho</div>
+        <div class="slide-number">02 / 05</div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 -->
+    <div class="slide-container">
+      <span class="slide-label">03 — Argumento</span>
+      <div class="slide slide-3">
+        <div class="marble-bg"></div>
+        <div class="content">
+          <div class="icon-wrapper">
+            <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polyline points="4,44 16,28 26,34 40,14 48,18" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="34,8 48,8 48,22" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="tag">Proteção de patrimônio</span>
+          <h2>Imóvel de alto padrão:<br/>um ativo que protege<br/>seu capital.</h2>
+          <div class="gold-line"></div>
+          <div class="stats">
+            <div class="stat-item">
+              <div class="stat-bullet"></div>
+              <span class="stat-text">Inflação corrói dinheiro parado. Imóvel valoriza.</span>
+            </div>
+            <div class="stat-item">
+              <div class="stat-bullet"></div>
+              <span class="stat-text">No alto padrão, a demanda qualificada nunca some.</span>
+            </div>
+            <div class="stat-item">
+              <div class="stat-bullet"></div>
+              <span class="stat-text">Queda de juros no futuro? Valorização garantida.</span>
+            </div>
+          </div>
+        </div>
+        <div class="logo">Delara &amp; Carvalho<br/>Imóveis</div>
+        <div class="slide-number">03 / 05</div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 -->
+    <div class="slide-container">
+      <span class="slide-label">04 — Urgência</span>
+      <div class="slide slide-4">
+        <div class="content">
+          <div class="big-number">2022</div>
+          <div class="arrow-label">→ hoje</div>
+          <h2>O erro mais caro:<br/>esperar a hora certa.</h2>
+          <div class="divider-h"></div>
+          <p>Quem esperou os juros caírem em 2022<br/><strong>perdeu valorização real.</strong><br/><br/>O mercado de alto padrão não espera por você.<br/><br/>O melhor momento foi ontem.<br/><strong>O segundo melhor é agora.</strong></p>
+        </div>
+        <div class="logo">Delara &amp; Carvalho</div>
+        <div class="slide-number">04 / 05</div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5 -->
+    <div class="slide-container">
+      <span class="slide-label">05 — CTA Final</span>
+      <div class="slide slide-5">
+        <div class="content">
+          <div class="top-line"></div>
+          <div class="logo-main">Delara &amp; Carvalho</div>
+          <div class="logo-sub">Imóveis · Alto Padrão</div>
+          <h2>Pronto para investir<br/>com inteligência?</h2>
+          <p>Nossos especialistas analisam o cenário com você.<br/>Sem enrolação. Sem pressão.<br/>Só o imóvel certo, na hora certa.</p>
+          <div class="cta-btn">Chame na DM</div>
+          <div class="dm-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="#C9A84C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            instagram direct message
+          </div>
+          <div class="bottom-line"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="download-hint">Ctrl + P para exportar em PDF · Cada slide: 1080 × 1350 px</p>
+
+</body>
+</html>
