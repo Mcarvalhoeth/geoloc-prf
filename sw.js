@@ -1,4 +1,4 @@
-const CACHE = 'geoloc-prf-v4';
+const CACHE = 'geoloc-prf-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -8,7 +8,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  console.log('[SW] Installing cache v3');
+  console.log('[SW] Installing cache v5');
   e.waitUntil(
     caches.open(CACHE).then(c => {
       console.log('[SW] Cache opened, adding assets');
