@@ -11,53 +11,51 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0a0c10;
-      --surface: #10141c;
-      --border: #1e2530;
-      --accent: #00e5ff;
-      --accent2: #ff6b00;
-      --text: #e8edf5;
-      --muted: #4a5568;
-      --ok: #00d68f;
-      --warn: #ffcc00;
+      --bg: #0a0c10; --surface: #10141c; --border: #1e2530;
+      --accent: #00e5ff; --accent2: #ff6b00; --text: #e8edf5;
+      --muted: #4a5568; --ok: #00d68f; --warn: #ffcc00;
     }
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Barlow Condensed', sans-serif; }
     body { display: flex; flex-direction: column; min-height: 100dvh; }
 
-    /* Header */
-    .header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface); }
-    .logo { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 18px; color: var(--accent); letter-spacing: 1px; }
-    .status { display: flex; align-items: center; gap: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--muted); }
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
-    .dot.active { background: var(--ok); animation: pulse 1.5s infinite; }
-    .dot.loading { background: var(--warn); animation: pulse 0.6s infinite; }
-    .dot.error { background: #ff6b6b; }
+    .header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border); background:var(--surface); }
+    .logo { font-family:'JetBrains Mono',monospace; font-weight:800; font-size:18px; color:var(--accent); letter-spacing:1px; }
+    .status { display:flex; align-items:center; gap:8px; font-size:11px; font-family:'JetBrains Mono',monospace; color:var(--muted); }
+    .dot { width:10px; height:10px; border-radius:50%; background:var(--muted); transition:background .3s; }
+    .dot.active { background:var(--ok); animation:pulse 1.5s infinite; }
+    .dot.loading { background:var(--warn); animation:pulse .6s infinite; }
+    .dot.error { background:#ff6b6b; }
     @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)} }
 
-    /* Layout */
-    .main { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .main { flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:10px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 
     /* Base card */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; position: relative; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; position:relative; }
     .card::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--accent),transparent); border-radius:12px 12px 0 0; }
     .card-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; font-family:'JetBrains Mono',monospace; }
     .card-value { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--accent); line-height:1.2; }
     .card-sub { font-size:11px; color:var(--muted); margin-top:4px; font-family:'JetBrains Mono',monospace; }
 
-    /* Highway card - card principal */
-    .rodovia-card { background: linear-gradient(135deg, #0d1520 0%, #101820 100%); border: 1px solid #1e3040; border-radius: 14px; padding: 20px; position: relative; overflow: hidden; }
+    /* Rodovia card */
+    .rodovia-card { background:linear-gradient(135deg,#0d1520,#101820); border:1px solid #1e3040; border-radius:14px; padding:20px; position:relative; overflow:hidden; }
     .rodovia-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:linear-gradient(90deg,var(--accent2),var(--accent)); }
-    .rodovia-card::after { content:''; position:absolute; bottom:-30px;right:-30px; width:120px;height:120px; border-radius:50%; background:rgba(0,229,255,0.03); }
+    .rodovia-card::after { content:''; position:absolute; bottom:-30px;right:-30px; width:120px;height:120px; border-radius:50%; background:rgba(0,229,255,.03); }
     .rodovia-name { font-family:'JetBrains Mono',monospace; font-size:42px; font-weight:800; color:var(--accent2); letter-spacing:-1px; line-height:1; }
     .rodovia-km { font-family:'JetBrains Mono',monospace; font-size:28px; font-weight:700; color:var(--accent); margin-top:10px; }
-    .rodovia-muni { font-size:13px; color:var(--muted); margin-top:8px; }
     .rodovia-acc { font-size:11px; color:var(--ok); font-family:'JetBrains Mono',monospace; margin-top:6px; display:none; }
-    .rodovia-acc.poor { color: var(--warn); }
-    .rodovia-acc.bad { color: #ff6b6b; }
+    .rodovia-acc.poor { color:var(--warn); }
+    .rodovia-acc.bad { color:#ff6b6b; }
+
+    /* Município card */
+    .muni-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; position:relative; }
+    .muni-card::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,#7c3aed,transparent); border-radius:12px 12px 0 0; }
+    .muni-nome { font-family:'JetBrains Mono',monospace; font-size:18px; font-weight:700; color:var(--text); line-height:1.2; }
+    .muni-uf { font-size:12px; color:var(--muted); margin-top:4px; font-family:'JetBrains Mono',monospace; }
+    .muni-ibge { display:inline-block; margin-top:6px; background:#1a1040; border:1px solid #2d1f6e; border-radius:6px; padding:3px 8px; font-size:11px; font-family:'JetBrains Mono',monospace; color:#a78bfa; letter-spacing:1px; }
 
     /* Speed card */
-    .speed-card { background: linear-gradient(135deg, #0d1a10 0%, #101c12 100%); border: 1px solid #1e3020; border-radius: 12px; padding: 14px 16px; position: relative; }
+    .speed-card { background:linear-gradient(135deg,#0d1a10,#101c12); border:1px solid #1e3020; border-radius:12px; padding:14px 16px; position:relative; }
     .speed-card::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--ok),transparent); border-radius:12px 12px 0 0; }
     .speed-value { font-family:'JetBrains Mono',monospace; font-size:32px; font-weight:800; color:var(--ok); line-height:1; }
     .speed-unit { font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-top:2px; }
@@ -72,15 +70,35 @@
     .btn-sec { padding:13px 8px; background:var(--surface); border:1px solid var(--border); border-radius:12px; color:var(--text); font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:600; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:6px; }
     .btn-sec:active { opacity:.7; transform:scale(.97); }
     .btn-sec:disabled { opacity:.3; cursor:default; }
+    .btn-medir { width:100%; padding:14px; background:#0d1a2a; border:1px solid #1e3a5f; border-radius:12px; color:#60a5fa; font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all .2s; }
+    .btn-medir:disabled { opacity:.3; cursor:default; }
+    .btn-medir.ativa { background:#0d2a0d; border-color:#1e5f1e; color:var(--ok); }
 
-    /* Misc */
+    /* Card de medição */
+    .medicao-card { background:#0a0f1a; border:1px solid #1e3a5f; border-radius:14px; padding:16px; display:none; }
+    .medicao-card::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,#3b82f6,transparent); border-radius:14px 14px 0 0; }
+    .medicao-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .medicao-titulo { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#60a5fa; font-family:'JetBrains Mono',monospace; }
+    .medicao-total-label { font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+    .medicao-total-val { font-family:'JetBrains Mono',monospace; font-size:26px; font-weight:800; color:#60a5fa; margin-bottom:12px; }
+    .medicao-lista { max-height:200px; overflow-y:auto; margin-bottom:12px; display:flex; flex-direction:column; gap:4px; }
+    .med-ponto { display:grid; grid-template-columns:28px 1fr auto; align-items:center; gap:6px; padding:7px 10px; background:#0d1520; border-radius:8px; border:1px solid #1e2a40; }
+    .med-idx { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#60a5fa; }
+    .med-coord { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text); }
+    .med-dist { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ok); white-space:nowrap; }
+    .med-empty { font-size:13px; color:var(--muted); text-align:center; padding:16px; }
+    .medicao-btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .btn-marcar { padding:13px; background:#0d2a0d; border:1px solid #1e5f1e; border-radius:10px; color:var(--ok); font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all .2s; }
+    .btn-marcar:active { transform:scale(.97); }
+    .btn-marcar:disabled { opacity:.3; cursor:default; }
+    .btn-limpar { padding:13px; background:#1a0a0a; border:1px solid #3d1515; border-radius:10px; color:#ff6b6b; font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:1px; text-transform:uppercase; cursor:pointer; transition:all .2s; }
+    .btn-limpar:active { transform:scale(.97); }
+
     .error { background:#1a0a0a; border:1px solid #3d1515; border-radius:12px; padding:12px 16px; color:#ff6b6b; font-size:14px; display:none; }
     .ts { text-align:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); letter-spacing:2px; padding:4px 0; }
     .spinner { display:inline-block; width:12px; height:12px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
     @keyframes spin { to { transform:rotate(360deg); } }
-
-    /* Toast */
-    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ok); color:#000; padding:10px 24px; border-radius:8px; font-weight:700; font-size:14px; font-family:'Barlow Condensed',sans-serif; letter-spacing:1px; opacity:0; transition:opacity 0.3s; pointer-events:none; z-index:100; white-space:nowrap; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ok); color:#000; padding:10px 24px; border-radius:8px; font-weight:700; font-size:14px; font-family:'Barlow Condensed',sans-serif; letter-spacing:1px; opacity:0; transition:opacity .3s; pointer-events:none; z-index:100; white-space:nowrap; }
     .toast.show { opacity:1; }
   </style>
 </head>
@@ -103,8 +121,15 @@
     <div class="card-label">🛣️ Rodovia / KM</div>
     <div class="rodovia-name" id="rod-name">—</div>
     <div class="rodovia-km" id="rod-km">Aguardando GPS...</div>
-    <div class="rodovia-muni" id="rod-muni"></div>
     <div class="rodovia-acc" id="rod-acc"></div>
+  </div>
+
+  <!-- MUNICÍPIO + IBGE -->
+  <div class="muni-card">
+    <div class="card-label">📍 Município</div>
+    <div class="muni-nome" id="muni-nome">—</div>
+    <div class="muni-uf" id="muni-uf"></div>
+    <span class="muni-ibge" id="muni-ibge" style="display:none"></span>
   </div>
 
   <!-- VELOCIDADE + PRECISÃO -->
@@ -143,6 +168,25 @@
     <button class="btn-sec" id="btn-maps" onclick="abrirMaps()" disabled>🗺️ Ver no Maps</button>
   </div>
 
+  <!-- Medir trecho -->
+  <button class="btn-medir" id="btn-medir" onclick="toggleMedicao()" disabled>📏 MEDIR TRECHO</button>
+
+  <!-- Card de medição (aparece ao iniciar) -->
+  <div class="medicao-card" id="medicao-card">
+    <div class="medicao-header">
+      <span class="medicao-titulo">📏 Medição de Trecho</span>
+      <span class="medicao-total-label">Total</span>
+    </div>
+    <div class="medicao-total-val" id="med-total">—</div>
+    <div class="medicao-lista" id="med-lista">
+      <div class="med-empty">Vá até o ponto inicial e toque em MARCAR PONTO.</div>
+    </div>
+    <div class="medicao-btns">
+      <button class="btn-marcar" id="btn-marcar" onclick="adicionarMarco()">+ MARCAR PONTO</button>
+      <button class="btn-limpar" onclick="limparMedicao()">🗑️ LIMPAR</button>
+    </div>
+  </div>
+
 </div>
 
 <div class="toast" id="toast"></div>
@@ -150,7 +194,10 @@
 <script>
 let watchId = null, tracking = false, lastData = null;
 let isFetching = false, lastFetchTime = 0;
-const MIN_FETCH_INTERVAL = 6000; // mínimo 6s entre chamadas à API
+const MIN_FETCH_INTERVAL = 6000;
+
+// Estado da medição
+let medicao = { ativa: false, pontos: [] };
 
 const $ = id => document.getElementById(id);
 
@@ -158,7 +205,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-// ─── Controle de rastreamento ─────────────────────────────────────────────
+// ─── Rastreamento GPS ─────────────────────────────────────────────────────
 
 function toggleTracking() { tracking ? stopTracking() : startTracking(); }
 
@@ -184,6 +231,7 @@ function stopTracking() {
   $('status-txt').textContent = 'OFFLINE';
   $('btn-copy').disabled = true;
   $('btn-maps').disabled = true;
+  $('btn-medir').disabled = true;
 }
 
 function onSuccess(pos) {
@@ -196,33 +244,31 @@ function onSuccess(pos) {
 
   $('lat').textContent = latitude.toFixed(6);
   $('lon').textContent = longitude.toFixed(6);
-
-  // Velocidade: GPS retorna m/s → converte para km/h
   $('speed').textContent = (speed !== null && speed >= 0) ? Math.round(speed * 3.6) : '—';
 
-  // Precisão GPS
   if (accuracy !== null) {
     $('acc-val').textContent = Math.round(accuracy);
-    const accEl = $('rod-acc');
+    const el = $('rod-acc');
     if (accuracy <= 15) {
-      accEl.textContent = `GPS ±${Math.round(accuracy)}m · Alta precisão`;
-      accEl.className = 'rodovia-acc';
+      el.textContent = `GPS ±${Math.round(accuracy)}m · Alta precisão`;
+      el.className = 'rodovia-acc';
     } else if (accuracy <= 50) {
-      accEl.textContent = `GPS ±${Math.round(accuracy)}m · Precisão média`;
-      accEl.className = 'rodovia-acc poor';
+      el.textContent = `GPS ±${Math.round(accuracy)}m · Precisão média`;
+      el.className = 'rodovia-acc poor';
     } else {
-      accEl.textContent = `GPS ±${Math.round(accuracy)}m · Baixa precisão`;
-      accEl.className = 'rodovia-acc bad';
+      el.textContent = `GPS ±${Math.round(accuracy)}m · Baixa precisão`;
+      el.className = 'rodovia-acc bad';
     }
-    accEl.style.display = 'block';
+    el.style.display = 'block';
   }
 
   const now = new Date();
   $('ts').textContent = now.toLocaleTimeString('pt-BR') + ' · ' + now.toLocaleDateString('pt-BR');
 
-  lastData = { latitude, longitude };
+  lastData = { latitude, longitude, accuracy };
   $('btn-copy').disabled = false;
   $('btn-maps').disabled = false;
+  $('btn-medir').disabled = false;
 
   buscarRodovia(latitude, longitude);
 }
@@ -239,7 +285,7 @@ function onError(err) {
 
 function showError(msg) { $('error').style.display = 'block'; $('error-text').textContent = msg; }
 
-// ─── Toast de notificação ─────────────────────────────────────────────────
+// ─── Toast ────────────────────────────────────────────────────────────────
 
 function showToast(msg, duration = 2500) {
   const t = $('toast');
@@ -248,7 +294,7 @@ function showToast(msg, duration = 2500) {
   setTimeout(() => t.classList.remove('show'), duration);
 }
 
-// ─── Ações de compartilhamento ────────────────────────────────────────────
+// ─── Copiar / Maps ────────────────────────────────────────────────────────
 
 function copiarCoordenadas() {
   if (!lastData) return;
@@ -268,29 +314,107 @@ function copiarFallback(txt) {
   el.style.cssText = 'position:fixed;opacity:0;';
   document.body.appendChild(el);
   el.select();
-  try {
-    document.execCommand('copy');
-    showToast('✓ Coordenadas copiadas!');
-  } catch {
-    showToast('Falha ao copiar. Tente manualmente.');
-  }
+  try { document.execCommand('copy'); showToast('✓ Coordenadas copiadas!'); }
+  catch { showToast('Falha ao copiar. Tente manualmente.'); }
   document.body.removeChild(el);
 }
 
 function abrirMaps() {
   if (!lastData) return;
-  const { latitude, longitude } = lastData;
-  window.open(`https://www.google.com/maps?q=${latitude},${longitude}`, '_blank', 'noopener');
+  window.open(`https://www.google.com/maps?q=${lastData.latitude},${lastData.longitude}`, '_blank', 'noopener');
 }
 
-// ─── Normalização de nome de rodovia ─────────────────────────────────────
+// ─── Medição de Trecho ────────────────────────────────────────────────────
+
+function toggleMedicao() {
+  if (!medicao.ativa) {
+    medicao = { ativa: true, pontos: [] };
+    $('medicao-card').style.display = 'block';
+    $('btn-medir').textContent = '⏹ ENCERRAR MEDIÇÃO';
+    $('btn-medir').className = 'btn-medir ativa';
+    atualizarMedicaoUI();
+    $('medicao-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else {
+    const total = calcularTotal();
+    if (medicao.pontos.length >= 2) {
+      showToast(`Distância total: ${formatarDist(total)}`, 3500);
+    }
+    medicao.ativa = false;
+    $('btn-medir').textContent = '📏 MEDIR TRECHO';
+    $('btn-medir').className = 'btn-medir';
+  }
+}
+
+function adicionarMarco() {
+  if (!lastData) return;
+  medicao.pontos.push({
+    lat: lastData.latitude,
+    lon: lastData.longitude,
+    acc: lastData.accuracy,
+    t: new Date()
+  });
+  atualizarMedicaoUI();
+  showToast(`P${medicao.pontos.length} marcado`);
+}
+
+function atualizarMedicaoUI() {
+  const pts = medicao.pontos;
+  if (pts.length === 0) {
+    $('med-lista').innerHTML = '<div class="med-empty">Vá até o ponto inicial e toque em MARCAR PONTO.</div>';
+    $('med-total').textContent = '—';
+    return;
+  }
+
+  let total = 0;
+  let html = '';
+  pts.forEach((p, i) => {
+    let distStr = '—';
+    if (i > 0) {
+      const d = haversine(pts[i-1].lat, pts[i-1].lon, p.lat, p.lon) * 1000;
+      total += d;
+      distStr = '+' + formatarDist(d);
+    }
+    html += `<div class="med-ponto">
+      <span class="med-idx">P${i+1}</span>
+      <span class="med-coord">${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}</span>
+      <span class="med-dist">${distStr}</span>
+    </div>`;
+  });
+
+  $('med-lista').innerHTML = html;
+  $('med-total').textContent = pts.length >= 2 ? formatarDist(total) : '—';
+  // Scroll para o último ponto
+  const lista = $('med-lista');
+  lista.scrollTop = lista.scrollHeight;
+}
+
+function calcularTotal() {
+  const pts = medicao.pontos;
+  let total = 0;
+  for (let i = 1; i < pts.length; i++) {
+    total += haversine(pts[i-1].lat, pts[i-1].lon, pts[i].lat, pts[i].lon) * 1000;
+  }
+  return total;
+}
+
+function formatarDist(metros) {
+  if (metros < 1000) return `${Math.round(metros)} m`;
+  return `${(metros / 1000).toFixed(3)} km`;
+}
+
+function limparMedicao() {
+  medicao = { ativa: false, pontos: [] };
+  $('medicao-card').style.display = 'none';
+  $('btn-medir').textContent = '📏 MEDIR TRECHO';
+  $('btn-medir').className = 'btn-medir';
+}
+
+// ─── Normalização de rodovia ──────────────────────────────────────────────
 
 function normalizarRodovia(ref) {
   if (!ref) return '—';
-  // BR-101, BR 101, BR101
   const br = ref.match(/\bBR[\s-]?(\d{2,3})\b/i);
   if (br) return `BR-${br[1]}`;
-  // Rodovias estaduais: SP-280, PR-445, etc.
   const est = ref.match(/\b([A-Z]{2})[\s-]?(\d{2,4})\b/i);
   if (est) return `${est[1].toUpperCase()}-${est[2]}`;
   return ref;
@@ -302,23 +426,23 @@ function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 function projetarSegmento(px, py, ax, ay, bx, by) {
-  const dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
-  if (len2 === 0) return { dist: haversine(px, py, ax, ay), t: 0 };
-  let t = ((px - ax) * dx + (py - ay) * dy) / len2;
+  const dx = bx-ax, dy = by-ay, len2 = dx*dx+dy*dy;
+  if (len2 === 0) return { dist: haversine(px,py,ax,ay), t: 0 };
+  let t = ((px-ax)*dx+(py-ay)*dy)/len2;
   t = Math.max(0, Math.min(1, t));
-  return { dist: haversine(px, py, ax + t * dx, ay + t * dy), t };
+  return { dist: haversine(px,py,ax+t*dx,ay+t*dy), t };
 }
 
 function calcularKMnaVia(lat, lon, geom) {
   try {
     let menorDist = Infinity, distAc = 0, distNo = 0;
     for (let i = 0; i < geom.length - 1; i++) {
-      const A = geom[i], B = geom[i + 1];
+      const A = geom[i], B = geom[i+1];
       const segLen = haversine(A.lat, A.lon, B.lat, B.lon);
       const proj = projetarSegmento(lat, lon, A.lat, A.lon, B.lat, B.lon);
       if (proj.dist < menorDist) { menorDist = proj.dist; distNo = distAc + proj.t * segLen; }
@@ -328,7 +452,7 @@ function calcularKMnaVia(lat, lon, geom) {
   } catch { return null; }
 }
 
-// ─── API Overpass (com debounce e proteção de race condition) ─────────────
+// ─── API Overpass ─────────────────────────────────────────────────────────
 
 async function buscarRodovia(lat, lon) {
   const now = Date.now();
@@ -339,18 +463,17 @@ async function buscarRodovia(lat, lon) {
   $('rod-km').innerHTML = '<span class="spinner"></span> buscando...';
 
   try {
-    // Query 1: Vias com referência próximas
     const q1 = `[out:json][timeout:12];(way(around:150,${lat},${lon})[highway][ref];way(around:150,${lat},${lon})[highway~"^(motorway|trunk|primary|secondary)$"];);out body geom;`;
-    const r1 = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q1) });
+    const r1 = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body:'data='+encodeURIComponent(q1) });
     if (!r1.ok) throw new Error(`Overpass HTTP ${r1.status}`);
     const d1 = await r1.json();
-    if (!d1 || !Array.isArray(d1.elements)) throw new Error('Resposta inválida da Overpass API');
+    if (!d1 || !Array.isArray(d1.elements)) throw new Error('Resposta inválida');
     const ways = d1.elements;
 
-    // Query 2: Marcos de KM próximos
-    const q2 = `[out:json][timeout:8];(node(around:500,${lat},${lon})[highway=milestone];node(around:500,${lat},${lon})["ref:km"];node(around:500,${lat},${lon})["distance"];);out body;`;
-    const r2 = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q2) });
-    const d2 = (r2.ok) ? await r2.json() : { elements: [] };
+    // Marcos de KM — raio maior (1km) para melhor interpolação
+    const q2 = `[out:json][timeout:10];(node(around:1000,${lat},${lon})[highway=milestone];node(around:1000,${lat},${lon})["ref:km"];node(around:1000,${lat},${lon})["distance"];);out body;`;
+    const r2 = await fetch('https://overpass-api.de/api/interpreter', { method:'POST', body:'data='+encodeURIComponent(q2) });
+    const d2 = r2.ok ? await r2.json() : { elements: [] };
     const marcos = (d2 && Array.isArray(d2.elements)) ? d2.elements : [];
 
     const comRef = ways.filter(w => w.tags && w.tags.ref);
@@ -361,24 +484,36 @@ async function buscarRodovia(lat, lon) {
       const tags = alvo.tags || {};
       rodoviaName = normalizarRodovia(tags.ref || tags.name);
 
-      // Tentar usar marco de KM mais próximo
-      if (marcos.length > 0) {
-        let melhor = null, menorD = Infinity;
-        for (const m of marcos) {
-          const d = haversine(lat, lon, m.lat, m.lon);
-          if (d < menorD) { menorD = d; melhor = m; }
-        }
-        if (melhor) {
-          const t = melhor.tags || {};
+      // Extrair marcos com valor de km válido, ordenados por distância
+      const marcosComKm = marcos
+        .map(m => {
+          const t = m.tags || {};
           const raw = t['ref:km'] || t.distance || t.milestone;
-          if (raw) {
-            const val = parseFloat(String(raw).replace(',', '.'));
-            if (!isNaN(val)) kmInfo = val.toFixed(1);
-          }
+          if (!raw) return null;
+          const val = parseFloat(String(raw).replace(',', '.'));
+          if (isNaN(val)) return null;
+          return { km: val, dist: haversine(lat, lon, m.lat, m.lon), lat: m.lat, lon: m.lon };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.dist - b.dist);
+
+      if (marcosComKm.length >= 2) {
+        // Interpolar entre os dois marcos mais próximos
+        const A = marcosComKm[0], B = marcosComKm[1];
+        const distAB = haversine(A.lat, A.lon, B.lat, B.lon); // km
+        // Verifica se o usuário está aproximadamente entre A e B
+        if (distAB > 0 && Math.abs(A.dist + B.dist - distAB) < 0.4) {
+          const t = A.dist / distAB;
+          const kmInterp = A.km + t * (B.km - A.km);
+          kmInfo = kmInterp.toFixed(2);
+        } else {
+          kmInfo = A.km.toFixed(1);
         }
+      } else if (marcosComKm.length === 1) {
+        kmInfo = marcosComKm[0].km.toFixed(1);
       }
 
-      // Fallback: calcular pelo comprimento da geometria da via
+      // Fallback: geometria da via
       if (!kmInfo && alvo.geometry && alvo.geometry.length > 1) {
         const kmBase = parseFloat(tags['ref:km:from'] || tags['loc_ref'] || '0') || 0;
         const dist = calcularKMnaVia(lat, lon, alvo.geometry);
@@ -397,6 +532,8 @@ async function buscarRodovia(lat, lon) {
   }
 }
 
+// ─── Município + IBGE ─────────────────────────────────────────────────────
+
 async function preencherMunicipio(lat, lon) {
   try {
     const res = await fetch(
@@ -407,8 +544,32 @@ async function preencherMunicipio(lat, lon) {
     const data = await res.json();
     const r = data.address || {};
     const city = r.city || r.town || r.village || r.municipality || '';
-    const state = r.state_code || r.state || '';
-    $('rod-muni').textContent = [city, state].filter(Boolean).join(' · ');
+    const uf = r.state_code || '';
+    const state = r.state || '';
+
+    $('muni-nome').textContent = city || '—';
+    $('muni-uf').textContent = [uf, state].filter(Boolean).join(' · ');
+
+    if (city && uf) buscarIBGE(city, uf);
+  } catch { /* silencioso */ }
+}
+
+async function buscarIBGE(cidade, uf) {
+  try {
+    const res = await fetch(
+      `https://servicodados.ibge.gov.br/api/v1/localidades/municipios?nome=${encodeURIComponent(cidade)}&orderBy=nome`
+    );
+    if (!res.ok) return;
+    const lista = await res.json();
+    if (!Array.isArray(lista) || lista.length === 0) return;
+    const match = lista.find(m =>
+      m.microrregiao?.mesorregiao?.UF?.sigla?.toUpperCase() === uf.toUpperCase()
+    ) || lista[0];
+    if (match?.id) {
+      const ibgeEl = $('muni-ibge');
+      ibgeEl.textContent = `IBGE ${match.id}`;
+      ibgeEl.style.display = 'inline-block';
+    }
   } catch { /* silencioso */ }
 }
 
@@ -418,14 +579,16 @@ async function fallbackNominatim(lat, lon) {
       `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=pt-BR`,
       { headers: { 'User-Agent': 'GeoLocPRF/1.0' } }
     );
-    if (!res.ok) throw new Error('Nominatim HTTP ' + res.status);
+    if (!res.ok) throw new Error('Nominatim ' + res.status);
     const data = await res.json();
     const r = data.address || {};
     $('rod-name').textContent = normalizarRodovia(r.road || r.highway) || 'Via desconhecida';
     $('rod-km').textContent = 'KM indisponível';
     const city = r.city || r.town || r.village || r.municipality || '';
-    const state = r.state_code || r.state || '';
-    $('rod-muni').textContent = [city, state].filter(Boolean).join(' · ');
+    const uf = r.state_code || '';
+    $('muni-nome').textContent = city || '—';
+    $('muni-uf').textContent = [uf, r.state].filter(Boolean).join(' · ');
+    if (city && uf) buscarIBGE(city, uf);
   } catch {
     $('rod-name').textContent = 'Sem conexão';
     $('rod-km').textContent = 'Verifique a internet';
