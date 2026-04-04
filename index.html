@@ -477,6 +477,59 @@ function calcularKMComMarcos(lat, lon, marcos) {
   return kmUser.toFixed(1);
 }
 
+// ─── API EPL/DNIT — SNV (Sistema Nacional de Viação) ─────────────────────
+// Retorna { rodRef, km } ou null se falhar / não encontrar rodovia
+
+async function buscarKMviaDNIT(lat, lon) {
+  // Tenta EPL primeiro, depois IBAMA como fallback (ambos têm dados SNV)
+  const endpoints = [
+    `https://geo.epl.gov.br/server/rest/services/Portal_Rodoviario/SNV_202001A/MapServer/0/query`,
+    `https://pamgia.ibama.gov.br/server/rest/services/01_Publicacoes_Bases/tra_trecho_rodoviario_principal_l/FeatureServer/23/query`
+  ];
+
+  for (const base of endpoints) {
+    try {
+      const url = `${base}?geometry=${lon},${lat}&geometryType=esriGeometryPoint` +
+        `&spatialRel=esriSpatialRelIntersects&distance=150&units=esriSRUnit_Meter` +
+        `&outFields=*&returnGeometry=true&inSR=4326&outSR=4326&f=json`;
+
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!r.ok) continue;
+      const data = await r.json();
+      if (!data.features || data.features.length === 0) continue;
+
+      const feat = data.features[0];
+      const a = feat.attributes || {};
+
+      // Nomes de campo possíveis no SNV (variam entre endpoints)
+      const sgBR = a.SG_BR || a.VL_BR || a.sg_br || a.NR_BR || '';
+      const kmIni = parseFloat(a.VL_KM_INICIO || a.NR_KM_INICIO || a.KM_INICIO || a.km_ini || 0);
+      const kmFim = parseFloat(a.VL_KM_FIM   || a.NR_KM_FIM   || a.KM_FIM   || a.km_fim || 0);
+
+      if (isNaN(kmIni) || isNaN(kmFim) || kmFim <= kmIni) continue;
+
+      // Normalizar nome da rodovia (SNV retorna só o número, ex: "376")
+      const rodRef = sgBR ? normalizarRodovia(`BR-${sgBR}`.replace(/BR-BR-/i, 'BR-')) : null;
+
+      // Interpolar posição dentro do segmento usando a geometria retornada
+      let kmCalc = (kmIni + kmFim) / 2;
+      const geom = feat.geometry;
+      if (geom && geom.paths && geom.paths.length > 0) {
+        // ArcGIS usa ordem [longitude, latitude]
+        const path = geom.paths[0].map(([plon, plat]) => ({ lat: plat, lon: plon }));
+        const totalLen = comprimentoVia(path);
+        const posLen = calcularKMnaVia(lat, lon, path);
+        if (totalLen > 0 && posLen !== null) {
+          kmCalc = kmIni + (posLen / totalLen) * (kmFim - kmIni);
+        }
+      }
+
+      return { rodRef, km: kmCalc.toFixed(1) };
+    } catch { /* tenta próximo endpoint */ }
+  }
+  return null;
+}
+
 // ─── API Overpass (com debounce e proteção de race condition) ─────────────
 
 async function buscarRodovia(lat, lon) {
@@ -488,7 +541,16 @@ async function buscarRodovia(lat, lon) {
   $('rod-km').innerHTML = '<span class="spinner"></span> buscando...';
 
   try {
-    // Query 1: Vias com referência próximas
+    // ── 1º: API oficial SNV/DNIT via EPL (mais precisa) ───────────────────
+    const dnit = await buscarKMviaDNIT(lat, lon);
+    if (dnit) {
+      if (dnit.rodRef) $('rod-name').textContent = dnit.rodRef;
+      $('rod-km').textContent = 'KM ' + dnit.km;
+      await preencherMunicipio(lat, lon);
+      return;
+    }
+
+    // ── 2º: Fallback OSM/Overpass ─────────────────────────────────────────
     const q1 = `[out:json][timeout:12];(way(around:150,${lat},${lon})[highway][ref];way(around:150,${lat},${lon})[highway~"^(motorway|trunk|primary|secondary)$"];);out body geom;`;
     const r1 = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q1) });
     if (!r1.ok) throw new Error(`Overpass HTTP ${r1.status}`);
@@ -496,7 +558,6 @@ async function buscarRodovia(lat, lon) {
     if (!d1 || !Array.isArray(d1.elements)) throw new Error('Resposta inválida da Overpass API');
     const ways = d1.elements;
 
-    // Selecionar a via mais próxima com ref, depois sem ref
     const comGeom = ways.filter(w => w.geometry && w.geometry.length > 0);
     const comRef = comGeom.filter(w => w.tags && w.tags.ref);
     const semRef = comGeom.filter(w => !w.tags || !w.tags.ref);
@@ -511,22 +572,16 @@ async function buscarRodovia(lat, lon) {
       rodoviaName = normalizarRodovia(tags.ref || tags.name);
       const rodRef = tags.ref || null;
 
-      // Dispara busca da relação de rota em background (para próximas atualizações)
       if (rodRef) buscarRelacaoEmBackground(lat, lon, rodRef);
 
-      // Query 2: marcos de KM próximos (5000m)
       const q2 = `[out:json][timeout:10];(node(around:5000,${lat},${lon})[highway=milestone];node(around:5000,${lat},${lon})["ref:km"];node(around:5000,${lat},${lon})["distance"][highway];node(around:5000,${lat},${lon})[milestone];);out body;`;
       const d2 = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q2) })
         .then(r => r.ok ? r.json() : { elements: [] }).catch(() => ({ elements: [] }));
       const marcos = Array.isArray(d2?.elements) ? d2.elements : [];
 
-      // 1º: marcos OSM (mais preciso quando disponíveis)
-      kmInfo = calcularKMComMarcos(lat, lon, marcos);
+      kmInfo = calcularKMComMarcos(lat, lon, marcos)
+            || calcularKMPorRelacao(lat, lon);
 
-      // 2º: relação de rota acumulada (busca em background, disponível da 2ª atualização em diante)
-      if (!kmInfo) kmInfo = calcularKMPorRelacao(lat, lon);
-
-      // 3º: via ancorada local (ref:km:from no segmento atual)
       if (!kmInfo && alvo.geometry && alvo.geometry.length > 1) {
         const kmBase = parseFloat(tags['ref:km:from'] || tags['loc_ref'] || '0') || 0;
         const dist = calcularKMnaVia(lat, lon, alvo.geometry);
