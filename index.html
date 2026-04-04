@@ -152,6 +152,10 @@ let watchId = null, tracking = false, lastData = null;
 let isFetching = false, lastFetchTime = 0;
 const MIN_FETCH_INTERVAL = 6000; // mínimo 6s entre chamadas à API
 
+// Cache da relação de rota (fetch em background, usado nas próximas atualizações)
+let relCache = null;   // { rodRef, orderedWays, offsetKm, dirMult, refCumStart }
+let relFetching = false;
+
 const $ = id => document.getElementById(id);
 
 if ('serviceWorker' in navigator) {
@@ -178,6 +182,7 @@ function startTracking() {
 function stopTracking() {
   if (watchId !== null) navigator.geolocation.clearWatch(watchId);
   watchId = null; tracking = false; isFetching = false;
+  relCache = null; relFetching = false;
   $('btn-main').textContent = 'INICIAR RASTREAMENTO';
   $('btn-main').className = 'btn-main';
   $('dot').className = 'dot';
@@ -359,6 +364,85 @@ function calcularKMPorViaAncorada(lat, lon, ways) {
   return melhorKM;
 }
 
+// Comprimento total de uma via pela sua geometria
+function comprimentoVia(geom) {
+  let total = 0;
+  for (let i = 0; i < geom.length - 1; i++)
+    total += haversine(geom[i].lat, geom[i].lon, geom[i + 1].lat, geom[i + 1].lon);
+  return total;
+}
+
+// Busca a relação de rota em background e armazena no cache
+function buscarRelacaoEmBackground(lat, lon, rodRef) {
+  if (relFetching || (relCache && relCache.rodRef === rodRef)) return;
+  relFetching = true;
+
+  const q = `[out:json][timeout:25];rel[ref="${rodRef}"][type=route]->.r;way(r.r)(around:200000,${lat},${lon})->.w;(.r;.w;);out body geom;`;
+
+  fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q) })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data) return;
+      const rels = data.elements.filter(e => e.type === 'relation');
+      const waysAll = data.elements.filter(e => e.type === 'way' && e.geometry?.length >= 2);
+      if (!rels.length || !waysAll.length) return;
+
+      const wayMap = new Map(waysAll.map(w => [w.id, w]));
+      let orderedWays = null;
+      for (const rel of rels) {
+        const ord = (rel.members || [])
+          .filter(m => m.type === 'way')
+          .map(m => wayMap.get(m.ref))
+          .filter(Boolean);
+        if (ord.length > 1) { orderedWays = ord; break; }
+      }
+      if (!orderedWays) return;
+
+      // Distância acumulada a partir do primeiro segmento da relação
+      let cum = 0;
+      for (const w of orderedWays) { w._cumStart = cum; cum += comprimentoVia(w.geometry); }
+
+      // Detectar direção e offset usando ref:km:from
+      const anchors = orderedWays.filter(w => !isNaN(parseFloat(w.tags?.['ref:km:from'])));
+      let offsetKm = 0, dirMult = 1, refCumStart = 0;
+      if (anchors.length >= 2) {
+        const a = anchors[0], b = anchors[anchors.length - 1];
+        const dKm = parseFloat(b.tags['ref:km:from']) - parseFloat(a.tags['ref:km:from']);
+        const dCum = b._cumStart - a._cumStart;
+        dirMult = (dKm * dCum > 0) ? 1 : -1;
+        offsetKm = parseFloat(a.tags['ref:km:from']);
+        refCumStart = a._cumStart;
+      } else if (anchors.length === 1) {
+        offsetKm = parseFloat(anchors[0].tags['ref:km:from']);
+        refCumStart = anchors[0]._cumStart;
+      }
+      // sem âncora: assume que a relação começa no km 0 (válido para muitas BR)
+
+      relCache = { rodRef, orderedWays, offsetKm, dirMult, refCumStart };
+    })
+    .catch(() => {})
+    .finally(() => { relFetching = false; });
+}
+
+// Calcula KM usando a relação de rota em cache
+function calcularKMPorRelacao(lat, lon) {
+  if (!relCache?.orderedWays?.length) return null;
+  const { orderedWays, offsetKm, dirMult, refCumStart } = relCache;
+  let melhorKM = null, menorDist = Infinity;
+  for (const w of orderedWays) {
+    const dist = distanciaParaVia(lat, lon, w.geometry);
+    if (dist < menorDist) {
+      menorDist = dist;
+      const pos = calcularKMnaVia(lat, lon, w.geometry);
+      if (pos !== null) {
+        const km = offsetKm + dirMult * (w._cumStart + pos - refCumStart);
+        if (km >= 0 && km < 10000) melhorKM = km.toFixed(1);
+      }
+    }
+  }
+  return menorDist < 0.15 ? melhorKM : null; // só usa se usuário está ≤150m de uma via
+}
+
 // Calcula KM interpolando entre os dois marcos mais próximos
 function calcularKMComMarcos(lat, lon, marcos) {
   const validos = [];
@@ -427,32 +511,22 @@ async function buscarRodovia(lat, lon) {
       rodoviaName = normalizarRodovia(tags.ref || tags.name);
       const rodRef = tags.ref || null;
 
-      // Query 2 (marcos) + Query 3 (vias ancoradas) em paralelo
+      // Dispara busca da relação de rota em background (para próximas atualizações)
+      if (rodRef) buscarRelacaoEmBackground(lat, lon, rodRef);
+
+      // Query 2: marcos de KM próximos (5000m)
       const q2 = `[out:json][timeout:10];(node(around:5000,${lat},${lon})[highway=milestone];node(around:5000,${lat},${lon})["ref:km"];node(around:5000,${lat},${lon})["distance"][highway];node(around:5000,${lat},${lon})[milestone];);out body;`;
-      const fetchMarcos = fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q2) })
+      const d2 = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q2) })
         .then(r => r.ok ? r.json() : { elements: [] }).catch(() => ({ elements: [] }));
-
-      // Vias do mesmo trecho com km ancorado (ref:km:from) dentro de 15km
-      const fetchAncoradas = rodRef
-        ? fetch('https://overpass-api.de/api/interpreter', {
-            method: 'POST',
-            body: 'data=' + encodeURIComponent(`[out:json][timeout:15];way(around:15000,${lat},${lon})[ref="${rodRef}"]["ref:km:from"];out body geom;`)
-          }).then(r => r.ok ? r.json() : { elements: [] }).catch(() => ({ elements: [] }))
-        : Promise.resolve({ elements: [] });
-
-      const [d2, d3] = await Promise.all([fetchMarcos, fetchAncoradas]);
       const marcos = Array.isArray(d2?.elements) ? d2.elements : [];
-      const viasAncoradas = Array.isArray(d3?.elements) ? d3.elements : [];
 
-      // 1º: marcos OSM (interpolação entre dois marcos)
+      // 1º: marcos OSM (mais preciso quando disponíveis)
       kmInfo = calcularKMComMarcos(lat, lon, marcos);
 
-      // 2º: vias com ref:km:from — âncora o KM absoluto
-      if (!kmInfo && viasAncoradas.length > 0) {
-        kmInfo = calcularKMPorViaAncorada(lat, lon, viasAncoradas);
-      }
+      // 2º: relação de rota acumulada (busca em background, disponível da 2ª atualização em diante)
+      if (!kmInfo) kmInfo = calcularKMPorRelacao(lat, lon);
 
-      // 3º: geometria pura do segmento atual (menos preciso)
+      // 3º: via ancorada local (ref:km:from no segmento atual)
       if (!kmInfo && alvo.geometry && alvo.geometry.length > 1) {
         const kmBase = parseFloat(tags['ref:km:from'] || tags['loc_ref'] || '0') || 0;
         const dist = calcularKMnaVia(lat, lon, alvo.geometry);
