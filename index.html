@@ -175,29 +175,29 @@ const MIN_FETCH_INTERVAL = 6000; // mínimo 6s entre chamadas à API
 let relCache = null;   // { rodRef, orderedWays, offsetKm, dirMult, refCumStart }
 let relFetching = false;
 
-// Correções manuais de KM (persistidas no localStorage)
+// Correção manual de KM
+// offsetSessao: ativo durante a sessão atual (sobrevive a mudanças de rodRef)
+// kmCorrecoes: persistido no localStorage por rodRef (carregado na próxima sessão)
 let kmCorrecoes = JSON.parse(localStorage.getItem('kmCorrecoes') || '{}');
-let rodAtual = null;    // ref da rodovia atual
-let kmCalculadoAtual = null; // último km calculado (sem correção)
+let rodAtual = null;
+let kmCalculadoAtual = null;
+let offsetSessao = null; // { valor, rodRef } — aplicado sempre enquanto ativo
 
-function aplicarCorrecao(kmCalc, rodRef) {
-  if (!rodRef || !(rodRef in kmCorrecoes)) return kmCalc;
-  const offset = kmCorrecoes[rodRef];
+function aplicarCorrecao(kmCalc) {
+  const offset = offsetSessao !== null ? offsetSessao.valor
+               : (rodAtual && rodAtual in kmCorrecoes) ? kmCorrecoes[rodAtual]
+               : null;
+  if (offset === null || kmCalc === null) return kmCalc;
   const val = parseFloat(kmCalc) + offset;
   return val >= 0 ? val.toFixed(1) : kmCalc;
 }
 
 function abrirCorrecaoKM() {
-  const edit = $('km-edit');
-  const inp = $('km-input');
-  // Pré-preencher com o km atual corrigido (ou calculado)
-  const kmAtual = rodAtual && rodAtual in kmCorrecoes
-    ? (parseFloat(kmCalculadoAtual || 0) + kmCorrecoes[rodAtual]).toFixed(0)
-    : (kmCalculadoAtual ? parseFloat(kmCalculadoAtual).toFixed(0) : '');
-  inp.value = kmAtual;
-  edit.style.display = 'flex';
-  inp.focus();
-  inp.select();
+  const kmAtual = aplicarCorrecao(kmCalculadoAtual);
+  $('km-input').value = kmAtual ? parseFloat(kmAtual).toFixed(0) : '';
+  $('km-edit').style.display = 'flex';
+  $('km-input').focus();
+  $('km-input').select();
 }
 
 function fecharCorrecaoKM() {
@@ -206,15 +206,17 @@ function fecharCorrecaoKM() {
 
 function salvarCorrecaoKM() {
   const real = parseFloat($('km-input').value);
-  if (isNaN(real) || real < 0 || real > 9999) { fecharCorrecaoKM(); return; }
-  if (!rodAtual || !kmCalculadoAtual) { fecharCorrecaoKM(); return; }
+  if (isNaN(real) || real < 0 || real > 9999 || !kmCalculadoAtual) { fecharCorrecaoKM(); return; }
   const offset = real - parseFloat(kmCalculadoAtual);
-  kmCorrecoes[rodAtual] = offset;
-  localStorage.setItem('kmCorrecoes', JSON.stringify(kmCorrecoes));
+  // Ativa o offset de sessão (persiste mesmo que rodRef mude entre chamadas)
+  offsetSessao = { valor: offset, rodRef: rodAtual };
+  // Também salva no localStorage pelo rodRef atual (para próximas sessões)
+  if (rodAtual) {
+    kmCorrecoes[rodAtual] = offset;
+    localStorage.setItem('kmCorrecoes', JSON.stringify(kmCorrecoes));
+  }
   fecharCorrecaoKM();
-  // Atualiza display imediatamente
-  const kmCorrigido = aplicarCorrecao(kmCalculadoAtual, rodAtual);
-  $('rod-km').textContent = 'KM ' + kmCorrigido;
+  $('rod-km').textContent = 'KM ' + real.toFixed(1);
   const btn = $('btn-corrigir');
   btn.textContent = '✏️ corrigido';
   btn.classList.add('corrigido');
@@ -223,19 +225,22 @@ function salvarCorrecaoKM() {
 
 function exibirKM(kmCalc, rodRef) {
   kmCalculadoAtual = kmCalc;
-  rodAtual = rodRef;
-  const kmFinal = aplicarCorrecao(kmCalc, rodRef);
+  // Se a rodovia mudou significativamente, tenta carregar correção do localStorage
+  if (rodRef && rodRef !== rodAtual) {
+    if (offsetSessao && offsetSessao.rodRef !== rodRef) offsetSessao = null;
+    if (!offsetSessao && rodRef in kmCorrecoes) {
+      offsetSessao = { valor: kmCorrecoes[rodRef], rodRef };
+    }
+  }
+  rodAtual = rodRef || rodAtual;
+  const kmFinal = aplicarCorrecao(kmCalc);
   $('rod-km').textContent = kmCalc ? 'KM ' + kmFinal : 'KM não disponível';
   const btn = $('btn-corrigir');
   if (kmCalc) {
     btn.style.display = 'inline-block';
-    if (rodRef && rodRef in kmCorrecoes) {
-      btn.textContent = '✏️ corrigido';
-      btn.classList.add('corrigido');
-    } else {
-      btn.textContent = '✏️ corrigir';
-      btn.classList.remove('corrigido');
-    }
+    const temCorrecao = offsetSessao !== null || (rodAtual && rodAtual in kmCorrecoes);
+    btn.textContent = temCorrecao ? '✏️ corrigido' : '✏️ corrigir';
+    btn.classList.toggle('corrigido', temCorrecao);
   } else {
     btn.style.display = 'none';
   }
@@ -268,7 +273,7 @@ function stopTracking() {
   if (watchId !== null) navigator.geolocation.clearWatch(watchId);
   watchId = null; tracking = false; isFetching = false;
   relCache = null; relFetching = false;
-  rodAtual = null; kmCalculadoAtual = null;
+  rodAtual = null; kmCalculadoAtual = null; offsetSessao = null;
   $('btn-corrigir').style.display = 'none';
   fecharCorrecaoKM();
   $('btn-main').textContent = 'INICIAR RASTREAMENTO';
