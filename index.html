@@ -56,6 +56,17 @@
     .rodovia-acc.poor { color: var(--warn); }
     .rodovia-acc.bad { color: #ff6b6b; }
 
+    /* Correção de KM */
+    .km-row { display:flex; align-items:center; gap:8px; margin-top:10px; }
+    .btn-corrigir { background:none; border:1px solid var(--border); border-radius:6px; color:var(--muted); font-size:11px; font-family:'JetBrains Mono',monospace; padding:3px 8px; cursor:pointer; white-space:nowrap; display:none; }
+    .btn-corrigir:active { opacity:.7; }
+    .btn-corrigir.corrigido { color:var(--warn); border-color:var(--warn); }
+    .km-edit { display:none; align-items:center; gap:6px; margin-top:8px; }
+    .km-input { background:var(--bg); border:1px solid var(--accent); border-radius:8px; color:var(--accent); font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:700; width:100px; padding:6px 10px; text-align:center; }
+    .km-input:focus { outline:none; }
+    .btn-km-ok { background:var(--accent); color:#000; border:none; border-radius:8px; font-family:'Barlow Condensed',sans-serif; font-size:14px; font-weight:900; padding:8px 14px; cursor:pointer; letter-spacing:1px; }
+    .btn-km-cancel { background:none; border:1px solid var(--border); border-radius:8px; color:var(--muted); font-size:13px; font-family:'Barlow Condensed',sans-serif; padding:8px 12px; cursor:pointer; }
+
     /* Speed card */
     .speed-card { background: linear-gradient(135deg, #0d1a10 0%, #101c12 100%); border: 1px solid #1e3020; border-radius: 12px; padding: 14px 16px; position: relative; }
     .speed-card::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--ok),transparent); border-radius:12px 12px 0 0; }
@@ -102,7 +113,15 @@
   <div class="rodovia-card">
     <div class="card-label">🛣️ Rodovia / KM</div>
     <div class="rodovia-name" id="rod-name">—</div>
-    <div class="rodovia-km" id="rod-km">Aguardando GPS...</div>
+    <div class="km-row">
+      <div class="rodovia-km" id="rod-km">Aguardando GPS...</div>
+      <button class="btn-corrigir" id="btn-corrigir" onclick="abrirCorrecaoKM()">✏️ corrigir</button>
+    </div>
+    <div class="km-edit" id="km-edit">
+      <input class="km-input" id="km-input" type="number" placeholder="116" inputmode="numeric">
+      <button class="btn-km-ok" onclick="salvarCorrecaoKM()">OK</button>
+      <button class="btn-km-cancel" onclick="fecharCorrecaoKM()">✕</button>
+    </div>
     <div class="rodovia-muni" id="rod-muni"></div>
     <div class="rodovia-acc" id="rod-acc"></div>
   </div>
@@ -156,6 +175,72 @@ const MIN_FETCH_INTERVAL = 6000; // mínimo 6s entre chamadas à API
 let relCache = null;   // { rodRef, orderedWays, offsetKm, dirMult, refCumStart }
 let relFetching = false;
 
+// Correções manuais de KM (persistidas no localStorage)
+let kmCorrecoes = JSON.parse(localStorage.getItem('kmCorrecoes') || '{}');
+let rodAtual = null;    // ref da rodovia atual
+let kmCalculadoAtual = null; // último km calculado (sem correção)
+
+function aplicarCorrecao(kmCalc, rodRef) {
+  if (!rodRef || !(rodRef in kmCorrecoes)) return kmCalc;
+  const offset = kmCorrecoes[rodRef];
+  const val = parseFloat(kmCalc) + offset;
+  return val >= 0 ? val.toFixed(1) : kmCalc;
+}
+
+function abrirCorrecaoKM() {
+  const edit = $('km-edit');
+  const inp = $('km-input');
+  // Pré-preencher com o km atual corrigido (ou calculado)
+  const kmAtual = rodAtual && rodAtual in kmCorrecoes
+    ? (parseFloat(kmCalculadoAtual || 0) + kmCorrecoes[rodAtual]).toFixed(0)
+    : (kmCalculadoAtual ? parseFloat(kmCalculadoAtual).toFixed(0) : '');
+  inp.value = kmAtual;
+  edit.style.display = 'flex';
+  inp.focus();
+  inp.select();
+}
+
+function fecharCorrecaoKM() {
+  $('km-edit').style.display = 'none';
+}
+
+function salvarCorrecaoKM() {
+  const real = parseFloat($('km-input').value);
+  if (isNaN(real) || real < 0 || real > 9999) { fecharCorrecaoKM(); return; }
+  if (!rodAtual || !kmCalculadoAtual) { fecharCorrecaoKM(); return; }
+  const offset = real - parseFloat(kmCalculadoAtual);
+  kmCorrecoes[rodAtual] = offset;
+  localStorage.setItem('kmCorrecoes', JSON.stringify(kmCorrecoes));
+  fecharCorrecaoKM();
+  // Atualiza display imediatamente
+  const kmCorrigido = aplicarCorrecao(kmCalculadoAtual, rodAtual);
+  $('rod-km').textContent = 'KM ' + kmCorrigido;
+  const btn = $('btn-corrigir');
+  btn.textContent = '✏️ corrigido';
+  btn.classList.add('corrigido');
+  showToast('KM corrigido para ' + real);
+}
+
+function exibirKM(kmCalc, rodRef) {
+  kmCalculadoAtual = kmCalc;
+  rodAtual = rodRef;
+  const kmFinal = aplicarCorrecao(kmCalc, rodRef);
+  $('rod-km').textContent = kmCalc ? 'KM ' + kmFinal : 'KM não disponível';
+  const btn = $('btn-corrigir');
+  if (kmCalc) {
+    btn.style.display = 'inline-block';
+    if (rodRef && rodRef in kmCorrecoes) {
+      btn.textContent = '✏️ corrigido';
+      btn.classList.add('corrigido');
+    } else {
+      btn.textContent = '✏️ corrigir';
+      btn.classList.remove('corrigido');
+    }
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
 const $ = id => document.getElementById(id);
 
 if ('serviceWorker' in navigator) {
@@ -183,6 +268,9 @@ function stopTracking() {
   if (watchId !== null) navigator.geolocation.clearWatch(watchId);
   watchId = null; tracking = false; isFetching = false;
   relCache = null; relFetching = false;
+  rodAtual = null; kmCalculadoAtual = null;
+  $('btn-corrigir').style.display = 'none';
+  fecharCorrecaoKM();
   $('btn-main').textContent = 'INICIAR RASTREAMENTO';
   $('btn-main').className = 'btn-main';
   $('dot').className = 'dot';
@@ -545,7 +633,7 @@ async function buscarRodovia(lat, lon) {
     const dnit = await buscarKMviaDNIT(lat, lon);
     if (dnit) {
       if (dnit.rodRef) $('rod-name').textContent = dnit.rodRef;
-      $('rod-km').textContent = 'KM ' + dnit.km;
+      exibirKM(dnit.km, dnit.rodRef);
       await preencherMunicipio(lat, lon);
       return;
     }
@@ -590,7 +678,7 @@ async function buscarRodovia(lat, lon) {
     }
 
     $('rod-name').textContent = rodoviaName;
-    $('rod-km').textContent = kmInfo ? 'KM ' + kmInfo : 'KM não disponível';
+    exibirKM(kmInfo, rodoviaName !== '—' ? rodoviaName : null);
     await preencherMunicipio(lat, lon);
 
   } catch {
