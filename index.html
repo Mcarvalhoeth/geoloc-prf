@@ -341,6 +341,24 @@ function distanciaParaVia(lat, lon, geom) {
   return menorDist;
 }
 
+// Calcula KM usando via ancorada (que tem ref:km:from definido)
+function calcularKMPorViaAncorada(lat, lon, ways) {
+  let melhorKM = null, menorDist = Infinity;
+  for (const w of ways) {
+    if (!w.geometry || w.geometry.length < 2) continue;
+    const t = w.tags || {};
+    const kmFrom = parseFloat(String(t['ref:km:from'] || '').replace(',', '.'));
+    if (isNaN(kmFrom)) continue;
+    const dist = distanciaParaVia(lat, lon, w.geometry);
+    if (dist < menorDist) {
+      menorDist = dist;
+      const posNaVia = calcularKMnaVia(lat, lon, w.geometry);
+      if (posNaVia !== null) melhorKM = (kmFrom + posNaVia).toFixed(1);
+    }
+  }
+  return melhorKM;
+}
+
 // Calcula KM interpolando entre os dois marcos mais próximos
 function calcularKMComMarcos(lat, lon, marcos) {
   const validos = [];
@@ -394,12 +412,6 @@ async function buscarRodovia(lat, lon) {
     if (!d1 || !Array.isArray(d1.elements)) throw new Error('Resposta inválida da Overpass API');
     const ways = d1.elements;
 
-    // Query 2: Marcos de KM próximos
-    const q2 = `[out:json][timeout:10];(node(around:2000,${lat},${lon})[highway=milestone];node(around:2000,${lat},${lon})["ref:km"];node(around:2000,${lat},${lon})["distance"][highway];node(around:2000,${lat},${lon})[milestone];);out body;`;
-    const r2 = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q2) });
-    const d2 = (r2.ok) ? await r2.json() : { elements: [] };
-    const marcos = (d2 && Array.isArray(d2.elements)) ? d2.elements : [];
-
     // Selecionar a via mais próxima com ref, depois sem ref
     const comGeom = ways.filter(w => w.geometry && w.geometry.length > 0);
     const comRef = comGeom.filter(w => w.tags && w.tags.ref);
@@ -413,11 +425,34 @@ async function buscarRodovia(lat, lon) {
     if (alvo) {
       const tags = alvo.tags || {};
       rodoviaName = normalizarRodovia(tags.ref || tags.name);
+      const rodRef = tags.ref || null;
 
-      // Primário: interpolar entre os dois marcos mais próximos
+      // Query 2 (marcos) + Query 3 (vias ancoradas) em paralelo
+      const q2 = `[out:json][timeout:10];(node(around:5000,${lat},${lon})[highway=milestone];node(around:5000,${lat},${lon})["ref:km"];node(around:5000,${lat},${lon})["distance"][highway];node(around:5000,${lat},${lon})[milestone];);out body;`;
+      const fetchMarcos = fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q2) })
+        .then(r => r.ok ? r.json() : { elements: [] }).catch(() => ({ elements: [] }));
+
+      // Vias do mesmo trecho com km ancorado (ref:km:from) dentro de 15km
+      const fetchAncoradas = rodRef
+        ? fetch('https://overpass-api.de/api/interpreter', {
+            method: 'POST',
+            body: 'data=' + encodeURIComponent(`[out:json][timeout:15];way(around:15000,${lat},${lon})[ref="${rodRef}"]["ref:km:from"];out body geom;`)
+          }).then(r => r.ok ? r.json() : { elements: [] }).catch(() => ({ elements: [] }))
+        : Promise.resolve({ elements: [] });
+
+      const [d2, d3] = await Promise.all([fetchMarcos, fetchAncoradas]);
+      const marcos = Array.isArray(d2?.elements) ? d2.elements : [];
+      const viasAncoradas = Array.isArray(d3?.elements) ? d3.elements : [];
+
+      // 1º: marcos OSM (interpolação entre dois marcos)
       kmInfo = calcularKMComMarcos(lat, lon, marcos);
 
-      // Fallback: calcular pelo comprimento da geometria da via + ref:km:from
+      // 2º: vias com ref:km:from — âncora o KM absoluto
+      if (!kmInfo && viasAncoradas.length > 0) {
+        kmInfo = calcularKMPorViaAncorada(lat, lon, viasAncoradas);
+      }
+
+      // 3º: geometria pura do segmento atual (menos preciso)
       if (!kmInfo && alvo.geometry && alvo.geometry.length > 1) {
         const kmBase = parseFloat(tags['ref:km:from'] || tags['loc_ref'] || '0') || 0;
         const dist = calcularKMnaVia(lat, lon, alvo.geometry);
