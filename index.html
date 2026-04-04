@@ -225,20 +225,25 @@ function salvarCorrecaoKM() {
 
 function exibirKM(kmCalc, rodRef) {
   kmCalculadoAtual = kmCalc;
-  // Se a rodovia mudou significativamente, tenta carregar correção do localStorage
-  if (rodRef && rodRef !== rodAtual) {
-    if (offsetSessao && offsetSessao.rodRef !== rodRef) offsetSessao = null;
-    if (!offsetSessao && rodRef in kmCorrecoes) {
-      offsetSessao = { valor: kmCorrecoes[rodRef], rodRef };
-    }
+  // Só reconhece mudança de rodovia se o novo ref parece um código (BR-376, SP-280...)
+  // Nomes completos ("Governador Ney Braga") são ignorados para não apagar o offset
+  const refValido = rodRef && /^[A-Z]{2}-\d{2,4}$/i.test(rodRef);
+  if (refValido && rodRef !== rodAtual) {
+    // Rodovia mudou de verdade — carrega correção do localStorage se houver
+    offsetSessao = kmCorrecoes[rodRef] !== undefined
+      ? { valor: kmCorrecoes[rodRef], rodRef }
+      : null;
+    rodAtual = rodRef;
   }
-  rodAtual = rodRef || rodAtual;
+  // Se rodAtual não está definido ainda, aceita qualquer coisa
+  if (!rodAtual && rodRef) rodAtual = rodRef;
+
   const kmFinal = aplicarCorrecao(kmCalc);
   $('rod-km').textContent = kmCalc ? 'KM ' + kmFinal : 'KM não disponível';
   const btn = $('btn-corrigir');
   if (kmCalc) {
     btn.style.display = 'inline-block';
-    const temCorrecao = offsetSessao !== null || (rodAtual && rodAtual in kmCorrecoes);
+    const temCorrecao = offsetSessao !== null;
     btn.textContent = temCorrecao ? '✏️ corrigido' : '✏️ corrigir';
     btn.classList.toggle('corrigido', temCorrecao);
   } else {
@@ -662,8 +667,13 @@ async function buscarRodovia(lat, lon) {
 
     if (alvo) {
       const tags = alvo.tags || {};
-      rodoviaName = normalizarRodovia(tags.ref || tags.name);
+      // Preferir sempre o ref (BR-376) ao invés do nome completo
       const rodRef = tags.ref || null;
+      const refNormalizado = rodRef ? normalizarRodovia(rodRef) : null;
+      // Só exibir nome se parecer código de rodovia; senão manter o que já está na tela
+      rodoviaName = (refNormalizado && /^[A-Z]{2}-\d{2,4}$/i.test(refNormalizado))
+        ? refNormalizado
+        : ($('rod-name').textContent !== '—' ? $('rod-name').textContent : '—');
 
       if (rodRef) buscarRelacaoEmBackground(lat, lon, rodRef);
 
@@ -717,8 +727,11 @@ async function fallbackNominatim(lat, lon) {
     if (!res.ok) throw new Error('Nominatim HTTP ' + res.status);
     const data = await res.json();
     const r = data.address || {};
-    $('rod-name').textContent = normalizarRodovia(r.road || r.highway) || 'Via desconhecida';
-    $('rod-km').textContent = 'KM indisponível';
+    const nomeNom = normalizarRodovia(r.road || r.highway) || '';
+    // Só substituir o nome se parecer código de rodovia; senão manter o anterior
+    if (nomeNom && /^[A-Z]{2}-\d{2,4}$/i.test(nomeNom)) $('rod-name').textContent = nomeNom;
+    else if ($('rod-name').textContent === '—') $('rod-name').textContent = nomeNom || 'Via desconhecida';
+    exibirKM(null, null); // mantém o offset mas mostra km indisponível
     const city = r.city || r.town || r.village || r.municipality || '';
     const state = r.state_code || r.state || '';
     $('rod-muni').textContent = [city, state].filter(Boolean).join(' · ');
