@@ -265,16 +265,17 @@ function copiarCoordenadas() {
 function copiarFallback(txt) {
   const el = document.createElement('textarea');
   el.value = txt;
-  el.style.cssText = 'position:fixed;opacity:0;';
+  el.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
   document.body.appendChild(el);
   el.select();
-  try {
-    document.execCommand('copy');
-    showToast('✓ Coordenadas copiadas!');
-  } catch {
-    showToast('Falha ao copiar. Tente manualmente.');
-  }
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch { /* noop */ }
   document.body.removeChild(el);
+  if (ok) {
+    showToast('✓ Coordenadas copiadas!');
+  } else {
+    showToast('Falha ao copiar: ' + txt, 4000);
+  }
 }
 
 function abrirMaps() {
@@ -328,6 +329,52 @@ function calcularKMnaVia(lat, lon, geom) {
   } catch { return null; }
 }
 
+// Distância mínima de um ponto até uma via (geometria de segments)
+function distanciaParaVia(lat, lon, geom) {
+  if (!geom || geom.length === 0) return Infinity;
+  if (geom.length === 1) return haversine(lat, lon, geom[0].lat, geom[0].lon);
+  let menorDist = Infinity;
+  for (let i = 0; i < geom.length - 1; i++) {
+    const proj = projetarSegmento(lat, lon, geom[i].lat, geom[i].lon, geom[i + 1].lat, geom[i + 1].lon);
+    if (proj.dist < menorDist) menorDist = proj.dist;
+  }
+  return menorDist;
+}
+
+// Calcula KM interpolando entre os dois marcos mais próximos
+function calcularKMComMarcos(lat, lon, marcos) {
+  const validos = [];
+  for (const m of marcos) {
+    if (!m.lat || !m.lon) continue;
+    const t = m.tags || {};
+    const raw = t['ref:km'] || t.distance || t.milestone;
+    if (!raw) continue;
+    const km = parseFloat(String(raw).replace(',', '.'));
+    if (isNaN(km) || km < 0 || km > 10000) continue;
+    validos.push({ km, dist: haversine(lat, lon, m.lat, m.lon), lat: m.lat, lon: m.lon });
+  }
+  if (validos.length === 0) return null;
+
+  // Ordenar pelo mais próximo
+  validos.sort((a, b) => a.dist - b.dist);
+  const a = validos[0];
+
+  // Apenas um marco disponível: retornar valor direto
+  if (validos.length === 1) return a.km.toFixed(1);
+
+  const b = validos[1];
+  // Se os dois marcos estiverem muito afastados entre si (>3km) provavelmente são rodovias diferentes
+  const distAB = haversine(a.lat, a.lon, b.lat, b.lon);
+  if (distAB > 3) return a.km.toFixed(1);
+  // Se os dois são quase no mesmo ponto, usar o mais próximo
+  if (distAB < 0.05) return a.km.toFixed(1);
+
+  // Interpolação linear ponderada: posição do usuário ao longo do eixo A→B
+  // km_user = km_a + (km_b - km_a) * dist_a / (dist_a + dist_b)
+  const kmUser = a.km + (b.km - a.km) * (a.dist / (a.dist + b.dist));
+  return kmUser.toFixed(1);
+}
+
 // ─── API Overpass (com debounce e proteção de race condition) ─────────────
 
 async function buscarRodovia(lat, lon) {
@@ -348,37 +395,29 @@ async function buscarRodovia(lat, lon) {
     const ways = d1.elements;
 
     // Query 2: Marcos de KM próximos
-    const q2 = `[out:json][timeout:8];(node(around:500,${lat},${lon})[highway=milestone];node(around:500,${lat},${lon})["ref:km"];node(around:500,${lat},${lon})["distance"];);out body;`;
+    const q2 = `[out:json][timeout:10];(node(around:2000,${lat},${lon})[highway=milestone];node(around:2000,${lat},${lon})["ref:km"];node(around:2000,${lat},${lon})["distance"][highway];node(around:2000,${lat},${lon})[milestone];);out body;`;
     const r2 = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: 'data=' + encodeURIComponent(q2) });
     const d2 = (r2.ok) ? await r2.json() : { elements: [] };
     const marcos = (d2 && Array.isArray(d2.elements)) ? d2.elements : [];
 
-    const comRef = ways.filter(w => w.tags && w.tags.ref);
-    const alvo = comRef.length > 0 ? comRef[0] : (ways.length > 0 ? ways[0] : null);
+    // Selecionar a via mais próxima com ref, depois sem ref
+    const comGeom = ways.filter(w => w.geometry && w.geometry.length > 0);
+    const comRef = comGeom.filter(w => w.tags && w.tags.ref);
+    const semRef = comGeom.filter(w => !w.tags || !w.tags.ref);
+    const maisProximo = arr => arr.map(w => ({ w, d: distanciaParaVia(lat, lon, w.geometry) })).sort((a, b) => a.d - b.d);
+    const alvo = (comRef.length > 0 ? maisProximo(comRef)[0].w : null) ||
+                 (semRef.length > 0 ? maisProximo(semRef)[0].w : null);
+
     let rodoviaName = '—', kmInfo = null;
 
     if (alvo) {
       const tags = alvo.tags || {};
       rodoviaName = normalizarRodovia(tags.ref || tags.name);
 
-      // Tentar usar marco de KM mais próximo
-      if (marcos.length > 0) {
-        let melhor = null, menorD = Infinity;
-        for (const m of marcos) {
-          const d = haversine(lat, lon, m.lat, m.lon);
-          if (d < menorD) { menorD = d; melhor = m; }
-        }
-        if (melhor) {
-          const t = melhor.tags || {};
-          const raw = t['ref:km'] || t.distance || t.milestone;
-          if (raw) {
-            const val = parseFloat(String(raw).replace(',', '.'));
-            if (!isNaN(val)) kmInfo = val.toFixed(1);
-          }
-        }
-      }
+      // Primário: interpolar entre os dois marcos mais próximos
+      kmInfo = calcularKMComMarcos(lat, lon, marcos);
 
-      // Fallback: calcular pelo comprimento da geometria da via
+      // Fallback: calcular pelo comprimento da geometria da via + ref:km:from
       if (!kmInfo && alvo.geometry && alvo.geometry.length > 1) {
         const kmBase = parseFloat(tags['ref:km:from'] || tags['loc_ref'] || '0') || 0;
         const dist = calcularKMnaVia(lat, lon, alvo.geometry);
